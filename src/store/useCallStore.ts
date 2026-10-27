@@ -34,6 +34,16 @@ export interface CallData {
   sourceAgent?: { id?: string; name?: string; department?: string };
   destinationAgentId?: string;
   destinationUserId?: string;
+  crossUnitLookup?: any;
+  source?: string;
+  sourceType?: string;
+  campaign?: string;
+  originalCallerId?: string;
+  calledNumber?: string;
+  trackingNumber?: string;
+  referralSource?: string;
+  sourceMetadata?: any;
+  callerMatchStatus?: string;
 }
 
 export interface CallState {

@@ -160,6 +160,25 @@ export const LiveCallPanel = () => {
 
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const autoOpenedSessionsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const currentSessionId = activeCall?.callSid || activeCall?.roomName;
+    if (webrtcConnected && currentSessionId && activeCall?.status === 'CONNECTED') {
+      const isInternal = Boolean(
+        activeCall?.isInternal || 
+        activeCall?.callCategory === 'INTERNAL' ||
+        activeCall?.type === 'INTERNAL' ||
+        (activeCall?.phone && activeCall.phone.toLowerCase() === 'internal') ||
+        (activeCall?.phone && activeCall.phone.startsWith('ext_'))
+      );
+
+      if (!isInternal && !autoOpenedSessionsRef.current.has(currentSessionId)) {
+        autoOpenedSessionsRef.current.add(currentSessionId);
+        setShowIntakeModal(true);
+      }
+    }
+  }, [webrtcConnected, activeCall?.status, activeCall?.callSid, activeCall?.roomName]);
 
   if (!activeCall || pathname?.includes('/call-center')) return null;
 
