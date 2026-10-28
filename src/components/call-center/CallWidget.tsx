@@ -377,6 +377,7 @@ interface PostCallIntelligenceCardProps {
   category?: string;
   onOpenDisposition: () => void;
   onWrapUp: () => void;
+  onOpenHistory?: () => void;
 }
 
 function PostCallIntelligenceCard({
@@ -387,6 +388,7 @@ function PostCallIntelligenceCard({
   category,
   onOpenDisposition,
   onWrapUp,
+  onOpenHistory,
 }: PostCallIntelligenceCardProps) {
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [recordingStatus, setRecordingStatus] = useState<string>('PROCESSING');
@@ -491,11 +493,30 @@ function PostCallIntelligenceCard({
       {/* Customer Info */}
       <div className="bg-[#111215] p-3 rounded-xl border border-[#22242a] flex items-center justify-between">
         <div>
-          <span className="text-sm font-bold text-white block truncate max-w-[200px]">{customerName || 'Customer'}</span>
+          <span className="text-sm font-bold text-white block truncate max-w-[200px]">
+            {customerName && customerName !== 'Unknown' && customerName !== 'Customer'
+              ? customerName
+              : phoneNumber && phoneNumber !== 'Voice Line' && phoneNumber !== 'Unknown'
+              ? phoneNumber
+              : 'Customer'}
+          </span>
           <span className="text-xs text-slate-400 font-mono block">{phoneNumber || 'Voice Line'}</span>
         </div>
-        <div className="w-9 h-9 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center border border-primary/30">
-          {(customerName || 'C').charAt(0).toUpperCase()}
+        <div className="flex items-center gap-2">
+          {onOpenHistory && (
+            <button
+              type="button"
+              onClick={onOpenHistory}
+              title="View Customer History"
+              className="p-2 rounded-xl bg-[#181a20] hover:bg-[#252830] text-orange-400 border border-[#2a2d36] transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-semibold shadow"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">History</span>
+            </button>
+          )}
+          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary font-bold text-sm flex items-center justify-center border border-primary/30">
+            {((customerName && customerName !== 'Unknown' && customerName !== 'Customer' ? customerName : phoneNumber) || 'C').charAt(0).toUpperCase()}
+          </div>
         </div>
       </div>
 
@@ -694,26 +715,71 @@ export function CallWidget() {
 
   const resolvedCustomerName = React.useMemo(() => {
     if (!activeCall) return '';
+    const cross = activeCall.crossUnitLookup;
+    if (cross?.name && cross.name !== 'Unknown' && cross.name !== 'Unknown Caller') return cross.name;
+    if (cross?.matchingCustomer?.name) return cross.matchingCustomer.name;
+    if (cross?.matchingLead?.customerName) return cross.matchingLead.customerName;
     if (activeCall.customerName && activeCall.customerName !== 'Customer' && activeCall.customerName !== 'Unknown Caller') {
       return activeCall.customerName;
     }
-    return (activeCall as any).callerName || activeCall.customerName || '';
+    if (activeCall.customerContext?.customer?.name) {
+      return activeCall.customerContext.customer.name;
+    }
+    if (activeCall.customerContext?.lead?.customerName) {
+      return activeCall.customerContext.lead.customerName;
+    }
+    return (activeCall as any).callerName || '';
   }, [activeCall]);
 
-  // Automatically open Call Intake modal when a real call is answered/connected with valid session ID
+  // Client-side fallback lookup if customer name is missing or generic on active call
+  useEffect(() => {
+    const phone = resolvedCustomerPhone || activeCall?.phone;
+    if (
+      phone &&
+      phone !== 'Unknown' &&
+      !activeCall?.crossUnitLookup &&
+      (!activeCall?.customerName || activeCall?.customerName === 'Customer')
+    ) {
+      apiFetch(`/api/v1/telephony/caller-lookup/${encodeURIComponent(phone)}`)
+        .then(async (res) => {
+          if (res.ok) {
+            const lookup = await res.json();
+            if (lookup && lookup.name) {
+              const current = useCallStore.getState().activeCall;
+              if (current && (current.phone === phone || current.caller === phone)) {
+                setActiveCall({
+                  ...current,
+                  customerName: lookup.name,
+                  crossUnitLookup: lookup,
+                  customerContext: { customer: lookup.matchingCustomer, lead: lookup.matchingLead },
+                  leadId: lookup.matchingLead?.id || current.leadId,
+                });
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [resolvedCustomerPhone, activeCall?.phone]);
+
+  // Automatically open Call Intake modal when a real call is initiated, ringing, or answered
   useEffect(() => {
     const currentSessionId = activeCall?.callSid || activeCall?.roomName;
-    if (callState === 'CONNECTED' && currentSessionId) {
-      // Avoid opening intake modal for internal directory calls
-      const isInternal = Boolean(
-        activeCall?.isInternal || 
-        activeCall?.callCategory === 'INTERNAL' ||
-        activeCall?.type === 'INTERNAL' ||
-        (activeCall?.phone && activeCall.phone.toLowerCase() === 'internal') ||
-        (activeCall?.phone && activeCall.phone.startsWith('ext_'))
-      );
+    if (!currentSessionId) return;
 
-      if (!isInternal && !autoOpenedSessionsRef.current.has(currentSessionId)) {
+    // Avoid opening intake modal for internal directory calls
+    const isInternal = Boolean(
+      activeCall?.isInternal || 
+      activeCall?.callCategory === 'INTERNAL' ||
+      activeCall?.type === 'INTERNAL' ||
+      (activeCall?.phone && activeCall.phone.toLowerCase() === 'internal') ||
+      (activeCall?.phone && activeCall.phone.startsWith('ext_'))
+    );
+    if (isInternal) return;
+
+    // Open intake form for active call (dialing, ringing, connecting, connected)
+    if (['DIALING', 'RINGING', 'CONNECTING', 'CONNECTED'].includes(callState)) {
+      if (!autoOpenedSessionsRef.current.has(currentSessionId)) {
         autoOpenedSessionsRef.current.add(currentSessionId);
         setShowIntakeModal(true);
       }
@@ -930,6 +996,7 @@ export function CallWidget() {
             }
           }}
           onWrapUp={() => handleFeedbackComplete(activeCall.callSid)}
+          onOpenHistory={() => setShowCustomerHistory(true)}
         />
 
         {showFeedbackModal && (
@@ -945,6 +1012,26 @@ export function CallWidget() {
             leadId={activeCall.leadId || ''} 
             onClose={() => handleFeedbackComplete(activeCall.callSid)} 
             onSubmit={() => handleFeedbackComplete(activeCall.callSid)} 
+          />
+        )}
+
+        {showIntakeModal && (
+          <CallIntakeFormModal
+            callSid={activeCall?.callSid || activeCall?.roomName || 'unknown'}
+            customerName={resolvedCustomerName}
+            phoneNumber={resolvedCustomerPhone}
+            leadId={activeCall?.leadId}
+            isOpen={showIntakeModal}
+            onClose={() => setShowIntakeModal(false)}
+            onSuccess={() => setShowIntakeModal(false)}
+          />
+        )}
+
+        {showCustomerHistory && (
+          <CustomerHistoryDrawer
+            identifier={resolvedCustomerPhone || resolvedCustomerName || activeCall?.customerId || activeCall?.phone || null}
+            isOpen={showCustomerHistory}
+            onClose={() => setShowCustomerHistory(false)}
           />
         )}
       </>
@@ -989,7 +1076,7 @@ export function CallWidget() {
                 callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
                 'border-[#333] bg-[#111] text-white shadow-black'
               }`}>
-                {activeCall?.customerName?.substring(0, 1).toUpperCase() || 'U'}
+                {((resolvedCustomerName && resolvedCustomerName !== 'Customer' ? resolvedCustomerName : activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : resolvedCustomerPhone) || 'C').substring(0, 1).toUpperCase()}
               </div>
               
               {/* Recording Indicator */}
@@ -1001,11 +1088,16 @@ export function CallWidget() {
             </div>
             
             <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
-              {customerData?.name || activeCall?.customerName || 'Unknown Caller'}
+              {resolvedCustomerName && resolvedCustomerName !== 'Customer'
+                ? resolvedCustomerName
+                : customerData?.name ||
+                  (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
+                  resolvedCustomerPhone ||
+                  'Customer'}
             </h2>
             <p className="text-slate-400 flex items-center gap-2 mb-2">
               {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
-              {customerData?.phone || activeCall?.phone || 'VoIP WebRTC Link'}
+              {resolvedCustomerPhone || customerData?.phone || activeCall?.phone || 'VoIP WebRTC Link'}
             </p>
             
           {/* LiveKit Connection */}

@@ -354,13 +354,10 @@ export function CallIntakeFormModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#16212b] hover:bg-[#202f3d] flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 font-semibold text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+            <span>Mandatory Intake • Submit to Complete</span>
+          </div>
         </div>
 
         {/* FORM CONTENT */}
@@ -768,14 +765,10 @@ export function CallIntakeFormModal({
           </div>
 
           {/* FOOTER ACTIONS */}
-          <div className="pt-4 border-t border-[#1e2933] flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-[#16212b] hover:bg-[#202f3d] text-slate-300 font-semibold text-xs transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="pt-4 border-t border-[#1e2933] flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 italic">
+              * Structured intake submission is mandatory to conclude this interaction.
+            </span>
             <button
               type="submit"
               disabled={isSubmitting}

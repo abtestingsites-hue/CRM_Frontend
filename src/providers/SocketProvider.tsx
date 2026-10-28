@@ -208,6 +208,19 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         `[INBOUND-E2E] STEP=FRONTEND_INCOMING_CALL_RECEIVED | event=incoming_call callId=${data.callSid || data.callId} roomName=${data.roomName} direction=${data.direction} provider=${data.provider || data.source} caller=${data.caller}`
       );
 
+      // Explicit Guard: Ignore any outbound calls (placed by agent)
+      const isOutbound =
+        (data.direction && data.direction.toUpperCase() === 'OUTBOUND') ||
+        (data.category && data.category.toLowerCase() === 'outbound') ||
+        (data.roomName && data.roomName.startsWith('call_outbound_')) ||
+        (data.callSid && data.callSid.startsWith('call_outbound_')) ||
+        data.isCaller;
+
+      if (isOutbound) {
+        console.log('[INBOUND-CALL] Ignoring outbound call event in handleIncomingCall');
+        return;
+      }
+
       // Target agent validation: ensure this call is intended for THIS specific agent
       const currentAgentId = user?.agentId || user?.id;
       const currentUserId = user?.userId || user?.id;
@@ -225,8 +238,13 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      const { status, fetchDashboardCalls } = useCallStore.getState();
+      const { status, fetchDashboardCalls, activeCall } = useCallStore.getState();
       fetchDashboardCalls();
+
+      // Guard: do not pop up incoming call for active outbound call session
+      if (activeCall && (activeCall.callSid === data.callSid || activeCall.roomName === data.roomName)) {
+        return;
+      }
 
       if (status === 'AVAILABLE' || data.isTransfer) {
         console.log(
@@ -477,6 +495,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           if (res.ok) {
             const data = await res.json();
             if (data.call) {
+              const active = useCallStore.getState().activeCall;
+              const isOutbound =
+                (data.call.direction && data.call.direction.toUpperCase() === 'OUTBOUND') ||
+                (data.call.category && data.call.category.toLowerCase() === 'outbound') ||
+                (data.call.roomName && data.call.roomName.startsWith('call_outbound_')) ||
+                (data.call.callSid && data.call.callSid.startsWith('call_outbound_')) ||
+                data.call.isCaller ||
+                active?.callSid === data.call.callSid ||
+                active?.roomName === data.call.roomName;
+
+              if (isOutbound) {
+                console.log('[POLLING] Ignoring outbound or currently active call in polling:', data.call.callSid);
+                return;
+              }
+
               console.log('Polling found incoming call:', data.call);
               setIncomingCall(data.call);
             }

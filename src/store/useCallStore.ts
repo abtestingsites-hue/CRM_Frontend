@@ -12,6 +12,7 @@ export interface CallData {
   status?: string;
   duration?: number;
   isCaller?: boolean;
+  customerId?: string;
   leadId?: string;
   accepted?: boolean;
   transcript?: string;

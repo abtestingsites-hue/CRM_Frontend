@@ -21,6 +21,20 @@ export const IncomingCallModal = () => {
 
   useEffect(() => {
     if (incomingCall) {
+      // Outbound calls must never display the incoming call prompt
+      const isOutbound =
+        (incomingCall.direction && incomingCall.direction.toUpperCase() === 'OUTBOUND') ||
+        (incomingCall.category && incomingCall.category.toLowerCase() === 'outbound') ||
+        (incomingCall.roomName && incomingCall.roomName.startsWith('call_outbound_')) ||
+        (incomingCall.callSid && incomingCall.callSid.startsWith('call_outbound_')) ||
+        incomingCall.isCaller;
+
+      if (isOutbound) {
+        console.log('[IncomingCallModal] Clearing outbound call from incoming modal');
+        setIncomingCall(null);
+        return;
+      }
+
       activeCallSidRef.current = incomingCall.callSid || incomingCall.roomName || null;
 
       // Initialize audio ringtone
@@ -151,9 +165,17 @@ export const IncomingCallModal = () => {
     );
   };
 
+  const isOutbound =
+    incomingCall &&
+    ((incomingCall.direction && incomingCall.direction.toUpperCase() === 'OUTBOUND') ||
+      (incomingCall.category && incomingCall.category.toLowerCase() === 'outbound') ||
+      (incomingCall.roomName && incomingCall.roomName.startsWith('call_outbound_')) ||
+      (incomingCall.callSid && incomingCall.callSid.startsWith('call_outbound_')) ||
+      incomingCall.isCaller);
+
   return (
     <AnimatePresence>
-      {incomingCall && (
+      {incomingCall && !isOutbound && (
         <motion.div 
           initial={{ opacity: 0, y: 50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

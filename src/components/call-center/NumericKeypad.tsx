@@ -179,10 +179,12 @@ export function NumericKeypad({ onCallInitiated }: NumericKeypadProps) {
       setSuccessNotice(`Connecting outbound call to ${normalized}...`);
 
       const finalRoomName = data.roomName || data.callSid || `room_${Date.now()}`;
+      const resolvedName = data.customerName && data.customerName !== 'Customer' ? data.customerName : 'Customer';
+
       setActiveCall({
         callSid: finalRoomName,
         roomName: finalRoomName,
-        customerName: 'Customer',
+        customerName: resolvedName,
         phone: normalized,
         urgency: 'NORMAL',
         category: 'Outbound',
@@ -191,8 +193,34 @@ export function NumericKeypad({ onCallInitiated }: NumericKeypadProps) {
         isCaller: true,
         accepted: true,
         token: data.token,
-        serverUrl: data.serverUrl || data.wsUrl
+        serverUrl: data.serverUrl || data.wsUrl,
+        crossUnitLookup: data.crossUnitLookup,
+        customerContext: data.customerContext || (data.crossUnitLookup?.matchingCustomer ? { customer: data.crossUnitLookup.matchingCustomer } : undefined),
+        leadId: data.leadId,
       });
+
+      // Real-time lookup fallback if backend didn't attach customerName
+      if (resolvedName === 'Customer') {
+        apiFetch(`/api/v1/telephony/caller-lookup/${encodeURIComponent(normalized)}`)
+          .then(async (lookupRes) => {
+            if (lookupRes.ok) {
+              const lookupData = await lookupRes.json();
+              if (lookupData && lookupData.name) {
+                const current = useCallStore.getState().activeCall;
+                if (current && (current.callSid === finalRoomName || current.roomName === finalRoomName)) {
+                  setActiveCall({
+                    ...current,
+                    customerName: lookupData.name,
+                    crossUnitLookup: lookupData,
+                    customerContext: { customer: lookupData.matchingCustomer, lead: lookupData.matchingLead },
+                    leadId: lookupData.matchingLead?.id || current.leadId,
+                  });
+                }
+              }
+            }
+          })
+          .catch(() => {});
+      }
 
       if (onCallInitiated) {
         onCallInitiated(data);

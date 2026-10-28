@@ -164,7 +164,7 @@ export const LiveCallPanel = () => {
 
   useEffect(() => {
     const currentSessionId = activeCall?.callSid || activeCall?.roomName;
-    if (webrtcConnected && currentSessionId && activeCall?.status === 'CONNECTED') {
+    if (currentSessionId && ['DIALING', 'RINGING', 'CONNECTING', 'CONNECTED'].includes(activeCall?.status || '')) {
       const isInternal = Boolean(
         activeCall?.isInternal || 
         activeCall?.callCategory === 'INTERNAL' ||
