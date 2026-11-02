@@ -5,7 +5,7 @@ export function RightSidebarPanels() {
   const queues = [
     { name: 'General Support', count: 4, max: 10, color: 'bg-[#f97316]' },
     { name: 'Technical Support', count: 7, max: 10, color: 'bg-[#f97316]' },
-    { name: 'Elder Care Services', count: 2, max: 10, color: 'bg-[#eab308]' },
+    { name: 'Care Management Services', count: 2, max: 10, color: 'bg-[#eab308]' },
     { name: 'Billing & Payments', count: 1, max: 10, color: 'bg-[#22c55e]' },
     { name: 'Emergency Queue', count: 0, max: 10, color: 'bg-[#ef4444]' },
   ];

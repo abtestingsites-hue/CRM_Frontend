@@ -48,7 +48,7 @@ export function MobileHeader({ shouldShowAgentShell, onOpenMenu }: MobileHeaderP
     if (path.includes("/leads/conversion")) return "Lead Board";
     if (path.includes("/leads/follow-ups")) return "Follow Ups";
     if (path.includes("/leads")) return "Leads";
-    return "CRM Platform";
+    return "CRM Tool";
   };
 
   return (
@@ -98,7 +98,7 @@ export function MobileHeader({ shouldShowAgentShell, onOpenMenu }: MobileHeaderP
                 {getModuleTitle(pathname)}
               </h1>
               <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider leading-none">
-                {shouldShowAgentShell ? "Agent Portal" : "ElderCare CRM"}
+                {shouldShowAgentShell ? "Agent Portal" : "CRM Tool"}
               </p>
             </div>
           </div>

@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Customer Feedback | ElderCare CRM',
+  title: 'Customer Feedback | CRM Tool',
 };
 
 export default function FeedbackPage() {

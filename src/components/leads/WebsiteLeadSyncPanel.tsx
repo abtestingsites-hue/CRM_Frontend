@@ -307,7 +307,7 @@ export function WebsiteLeadSyncPanel() {
                               name: 'Sample Lead',
                               phone: '9876543210',
                               email: 'lead@example.com',
-                              message: 'Need elder care consultation',
+                              message: 'Need care and consultation support',
                             },
                           ],
                           null,

@@ -545,10 +545,10 @@ export function CallIntakeFormModal({
             )}
           </div>
 
-          {/* PATIENT / ELDER & CLINICAL REQUIREMENTS */}
+          {/* PATIENT / CLIENT & CLINICAL REQUIREMENTS */}
           <div className="space-y-3">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1b2631] pb-1">
-              Patient / Elder Details
+              Patient / Client Details
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

@@ -151,7 +151,7 @@ export default function AutomationPage() {
   const [ruleName, setRuleName] = useState('Global Welcome Message');
   const [triggerEvent, setTriggerEvent] = useState('New Conversation Started');
   const [rulePriority, setRulePriority] = useState('P2 - High');
-  const [replyContent, setReplyContent] = useState("Welcome to ElderCare! How can we assist you today? Please reply with your inquiry or type 'Menu' to see our services.");
+  const [replyContent, setReplyContent] = useState("Welcome to CRM Tool! How can we assist you today? Please reply with your inquiry or type 'Menu' to see our services.");
 
   const fetchWorkflows = async () => {
     setLoading(true);
@@ -178,7 +178,7 @@ export default function AutomationPage() {
       console.warn('[Automation API Fetch Warning]:', err.message);
       // Fallback display if network issue
       setWorkflows([
-        { id: 'default-1', name: 'Global Welcome Message', trigger: 'New Conversation Started', action: 'Send "Welcome to ElderCare"', channels: ['whatsapp', 'email', 'livechat', 'instagram'], status: 'Active', priority: 'P1' },
+        { id: 'default-1', name: 'Global Welcome Message', trigger: 'New Conversation Started', action: 'Send "Welcome to CRM Tool"', channels: ['whatsapp', 'email', 'livechat', 'instagram'], status: 'Active', priority: 'P1' },
         { id: 'default-2', name: 'After-Hours Auto Reply', trigger: 'Outside Business Hours', action: 'Send "We are currently away"', channels: ['whatsapp', 'facebook', 'instagram', 'sms'], status: 'Active', priority: 'P2' },
         { id: 'default-3', name: 'VIP Customer SLA Warning', trigger: 'No response > 15 mins', action: 'Escalate to Department Head', channels: ['livechat', 'whatsapp'], status: 'Inactive', priority: 'P1' }
       ]);

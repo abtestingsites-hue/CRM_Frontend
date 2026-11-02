@@ -726,7 +726,7 @@ export function OmnichannelEnquiryPanel({
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  Patient / Elder Name
+                  Patient / Client Name
                 </label>
                 <input
                   type="text"

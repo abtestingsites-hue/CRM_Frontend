@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, Bot, Zap, Plus, Settings } from 'lucide-react';
 
 export const metadata = {
-  title: 'AI Agents | ElderCare CRM',
+  title: 'AI Agents | CRM Tool',
 };
 
 export default function AIAgentsPage() {

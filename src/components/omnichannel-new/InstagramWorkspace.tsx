@@ -90,7 +90,7 @@ export function InstagramWorkspace({ platformDef, colors, onBack }: any) {
   };
 
   const handleRequestPhoneNumber = () => {
-    const politeRequest = "Hello! Could you please share your contact phone number so our ElderCare coordinator can reach out regarding your care requirements?";
+    const politeRequest = "Hello! Could you please share your contact phone number so our care coordinator can reach out regarding your care requirements?";
     setInputText(politeRequest);
   };
 

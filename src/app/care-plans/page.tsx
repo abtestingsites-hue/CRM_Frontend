@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Care Plans | ElderCare CRM',
+  title: 'Care Plans | CRM Tool',
 };
 
 export default function CarePlansPage() {

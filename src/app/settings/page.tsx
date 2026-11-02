@@ -239,7 +239,7 @@ export default function SettingsPage() {
       } else {
         setDepartments([
           { id: 'default-1', name: 'Sales & Conversions', description: 'Enterprise sales team', agentCount: 24, status: 'Active' },
-          { id: 'default-2', name: 'Customer Support', description: 'Technical & eldercare support', agentCount: 42, status: 'Active' },
+          { id: 'default-2', name: 'Customer Support', description: 'Technical & operational support', agentCount: 42, status: 'Active' },
           { id: 'default-3', name: 'Field Operations', description: 'On-premise visits & appointments', agentCount: 12, status: 'Active' },
           { id: 'default-4', name: 'Marketing', description: 'Growth and outreach engine', agentCount: 5, status: 'Inactive' }
         ]);
@@ -248,7 +248,7 @@ export default function SettingsPage() {
       console.warn('[Departments API Fetch Warning]:', err.message);
       setDepartments([
         { id: 'default-1', name: 'Sales & Conversions', description: 'Enterprise sales team', agentCount: 24, status: 'Active' },
-        { id: 'default-2', name: 'Customer Support', description: 'Technical & eldercare support', agentCount: 42, status: 'Active' },
+        { id: 'default-2', name: 'Customer Support', description: 'Technical & operational support', agentCount: 42, status: 'Active' },
         { id: 'default-3', name: 'Field Operations', description: 'On-premise visits & appointments', agentCount: 12, status: 'Active' },
         { id: 'default-4', name: 'Marketing', description: 'Growth and outreach engine', agentCount: 5, status: 'Inactive' }
       ]);
@@ -332,10 +332,10 @@ export default function SettingsPage() {
           <EnterpriseFormWorkspace saveText="Update Company Profile">
             <div className="flex items-center gap-6 pb-6 border-b border-[#1e1e1e]">
               <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg border border-[#333] overflow-hidden">
-                <div className="text-3xl font-black text-orange-600">EC</div>
+                <div className="text-3xl font-black text-orange-600">CRM</div>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">ElderCare CRM Corporation</h3>
+                <h3 className="text-sm font-bold text-white">CRM Tool Corporation</h3>
                 <p className="text-xs text-slate-500 mb-2">Corporate Identity Logo</p>
                 <button type="button" className="px-3.5 py-1.5 bg-[#141414] border border-[#262626] text-white text-xs font-semibold rounded-lg hover:bg-[#202020] transition-colors">
                   Upload New Logo
@@ -345,7 +345,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Company Name</label>
-                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="text" defaultValue="ElderCare CRM" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
+                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="text" defaultValue="CRM Tool" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tax Registration (GST/VAT)</label>
@@ -353,7 +353,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-1.5 col-span-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Corporate Website</label>
-                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="url" defaultValue="https://www.eldercarecrm.com" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
+                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="url" defaultValue="https://www.crmtool.com" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
               </div>
               <div className="space-y-1.5 col-span-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Registered Address</label>
@@ -439,9 +439,9 @@ export default function SettingsPage() {
           <EnterpriseTableWorkspace 
             columns={['Agent Profile', 'Department', 'Extension', 'Role', 'Status', 'Actions']}
             data={[
-              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">R</div><div><span className="font-bold text-white block">Raghav</span><span className="text-[10px] text-slate-500">raghav@eldercare.com</span></div></div>, 'Sales', 'Ext 101', 'Super Admin', <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase">Active</span>, <button className="text-orange-500 hover:underline">Manage</button>],
-              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">M</div><div><span className="font-bold text-white block">Mani</span><span className="text-[10px] text-slate-500">mani@eldercare.com</span></div></div>, 'Support', 'Ext 102', 'Manager', <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase">Active</span>, <button className="text-orange-500 hover:underline">Manage</button>],
-              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">B</div><div><span className="font-bold text-white block">Barani</span><span className="text-[10px] text-slate-500">barani@eldercare.com</span></div></div>, 'Field Ops', 'Ext 105', 'Agent', <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[9px] font-bold uppercase">Away</span>, <button className="text-orange-500 hover:underline">Manage</button>],
+              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">R</div><div><span className="font-bold text-white block">Raghav</span><span className="text-[10px] text-slate-500">raghav@crmtool.com</span></div></div>, 'Sales', 'Ext 101', 'Super Admin', <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase">Active</span>, <button className="text-orange-500 hover:underline">Manage</button>],
+              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">M</div><div><span className="font-bold text-white block">Mani</span><span className="text-[10px] text-slate-500">mani@crmtool.com</span></div></div>, 'Support', 'Ext 102', 'Manager', <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[9px] font-bold uppercase">Active</span>, <button className="text-orange-500 hover:underline">Manage</button>],
+              [<div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center font-bold text-slate-300">B</div><div><span className="font-bold text-white block">Barani</span><span className="text-[10px] text-slate-500">barani@crmtool.com</span></div></div>, 'Field Ops', 'Ext 105', 'Agent', <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[9px] font-bold uppercase">Away</span>, <button className="text-orange-500 hover:underline">Manage</button>],
             ]}
             primaryAction="Invite Users"
             searchPlaceholder="Search directory by name, email, extension..."
@@ -525,7 +525,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Username / Email Auth</label>
-                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="text" defaultValue="alerts@eldercarecrm.com" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
+                <input aria-label="W full bg 101010 border border 222 focusborder orange 500 rounded lg px 4 py 2 text sm text white outline none" type="text" defaultValue="alerts@crmtool.com" className="w-full bg-[#101010] border border-[#222] focus:border-orange-500 rounded-lg px-4 py-2 text-sm text-white outline-none" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Password / App Password</label>

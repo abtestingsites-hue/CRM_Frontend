@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Emergency Alerts | ElderCare CRM',
+  title: 'Emergency Alerts | CRM Tool',
 };
 
 export default function EmergencyAlertsPage() {

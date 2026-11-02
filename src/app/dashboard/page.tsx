@@ -1,7 +1,7 @@
 import { Dashboard } from '@/components/Dashboard';
 
 export const metadata = {
-  title: 'Dashboard | ElderCare CRM',
+  title: 'Dashboard | CRM Tool',
 };
 
 export default function DashboardPage() {

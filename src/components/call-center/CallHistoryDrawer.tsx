@@ -236,7 +236,7 @@ export function CallHistoryDrawer({ callId, isOpen, onClose }: CallHistoryDrawer
                         <div className="mt-3 pt-3 border-t border-[#1a1a1a]">
                           <span className="text-[10px] text-slate-500 uppercase font-bold">Associated Lead</span>
                           <p className="text-xs font-semibold text-orange-400 truncate">{data.overview.lead.name}</p>
-                          <span className="text-[10px] text-slate-400">{data.overview.lead.primaryService || data.overview.lead.foundation || 'Elder Care'}</span>
+                          <span className="text-[10px] text-slate-400">{data.overview.lead.primaryService || data.overview.lead.foundation || 'General Service'}</span>
                         </div>
                       )}
                     </div>

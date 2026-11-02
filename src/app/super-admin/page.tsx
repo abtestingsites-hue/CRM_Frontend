@@ -1242,7 +1242,7 @@ export default function SuperAdminConsolePage() {
                   type="text"
                   value={unitForm.name}
                   onChange={(e) => setUnitForm({ ...unitForm, name: e.target.value })}
-                  placeholder="e.g. Universal ElderCare"
+                  placeholder="e.g. Universal Care Services"
                   className="w-full bg-[#121212] border border-[#282828] rounded-lg px-3 py-2 text-white outline-none focus:border-primary"
                 />
               </div>

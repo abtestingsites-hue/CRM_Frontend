@@ -87,7 +87,7 @@ export default function LoginPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to establish connection to ElderCare Auth Gateway');
+      setError(err.message || 'Failed to establish connection to CRM Auth Gateway');
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +108,7 @@ export default function LoginPage() {
             <div className="mx-auto w-12 h-12 bg-[#121212] border border-[#2a2a2a] rounded-xl flex items-center justify-center mb-4 shadow-inner">
               <ShieldCheck className="text-orange-500 w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">ElderCare CRM</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">CRM Tool</h1>
             <p className="text-slate-400 text-xs mt-1">Enterprise Sales & Command Center</p>
           </div>
 
@@ -184,7 +184,7 @@ export default function LoginPage() {
           </div>
 
           <div className="bg-[#101010] border-t border-[#1a1a1a] py-4 text-center">
-            <p className="text-[10px] text-slate-500 tracking-wider font-semibold">ELDERCARE CRM • CORE v4.1.0 • SECURED</p>
+            <p className="text-[10px] text-slate-500 tracking-wider font-semibold">CRM TOOL • CORE v4.1.0 • SECURED</p>
           </div>
         </div>
       </div>

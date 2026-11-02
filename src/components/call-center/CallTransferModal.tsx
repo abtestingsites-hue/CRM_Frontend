@@ -276,7 +276,7 @@ export function CallTransferModal({
                   {departments.length === 0 && (
                     <>
                       <option value="Customer Care">Customer Care</option>
-                      <option value="Elder Care">Elder Care</option>
+                      <option value="Care Management">Care Management</option>
                       <option value="Home Care">Home Care</option>
                       <option value="Ambulance Coordination">Ambulance Coordination</option>
                       <option value="Admissions">Admissions</option>

@@ -68,7 +68,7 @@ export default function TargetManagementPage() {
         setTargets(JSON.parse(cached));
       } else {
         const defaultTargets: TargetConfig[] = [
-          { id: '1', scope: 'Organization', period: 'Monthly', targetValue: 150, achievedValue: 62, assignee: 'ElderCare CRM' },
+          { id: '1', scope: 'Organization', period: 'Monthly', targetValue: 150, achievedValue: 62, assignee: 'CRM Tool' },
           { id: '2', scope: 'Team', period: 'Weekly', targetValue: 35, achievedValue: 24, assignee: 'Sales North' },
           { id: '3', scope: 'Agent', period: 'Daily', targetValue: 8, achievedValue: 5, assignee: 'Raghav' },
           { id: '4', scope: 'Agent', period: 'Daily', targetValue: 8, achievedValue: 6, assignee: 'Mani' },
@@ -124,7 +124,7 @@ export default function TargetManagementPage() {
 
   const handleResetDefaults = () => {
     const defaultTargets: TargetConfig[] = [
-      { id: '1', scope: 'Organization', period: 'Monthly', targetValue: 150, achievedValue: 62, assignee: 'ElderCare CRM' },
+      { id: '1', scope: 'Organization', period: 'Monthly', targetValue: 150, achievedValue: 62, assignee: 'CRM Tool' },
       { id: '2', scope: 'Team', period: 'Weekly', targetValue: 35, achievedValue: 24, assignee: 'Sales North' },
       { id: '3', scope: 'Agent', period: 'Daily', targetValue: 8, achievedValue: 5, assignee: 'Raghav' },
       { id: '4', scope: 'Agent', period: 'Daily', targetValue: 8, achievedValue: 6, assignee: 'Mani' },
@@ -605,7 +605,7 @@ export default function TargetManagementPage() {
                   <option value="Barani">Barani</option>
                   <option value="Agent Smith">Agent Smith</option>
                   <option value="Sales North">Sales North (Team)</option>
-                  <option value="ElderCare CRM">ElderCare CRM (Organization)</option>
+                  <option value="CRM Tool">CRM Tool (Organization)</option>
                 </select>
               </div>
 

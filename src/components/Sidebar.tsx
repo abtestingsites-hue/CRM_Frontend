@@ -70,7 +70,7 @@ export function Sidebar() {
           <Shield className="text-white w-6 h-6" />
         </div>
         <div>
-          <h1 className="font-bold text-lg tracking-tight text-white">ElderCare</h1>
+          <h1 className="font-bold text-lg tracking-tight text-white">CRM Tool</h1>
           <p className="text-[9px] text-slate-500 font-bold tracking-wider uppercase">CRM Enterprise</p>
         </div>
       </div>

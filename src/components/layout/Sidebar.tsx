@@ -105,10 +105,10 @@ export function Sidebar() {
     <div className="w-[220px] h-screen border-r border-[#222] bg-[#050505] flex flex-col pt-5 pb-5 shrink-0 relative z-20">
       {/* Brand */}
       <div className="px-4 flex items-center gap-2 mb-6">
-        <HeartPulse className="text-primary w-6 h-6" />
+        <Activity className="text-primary w-6 h-6" />
         <div>
-          <h1 className="font-bold text-base tracking-tight text-white">ElderCare</h1>
-          <p className="text-[8px] text-slate-500 font-medium uppercase tracking-wider">CRM Platform</p>
+          <h1 className="font-bold text-base tracking-tight text-white">CRM Tool</h1>
+
         </div>
       </div>
 

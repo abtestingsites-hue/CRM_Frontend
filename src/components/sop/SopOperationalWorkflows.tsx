@@ -490,7 +490,7 @@ export function HrOperationsView({ unitId }: { unitId?: string }) {
                     onChange={(e) => setNewStaff({ ...newStaff, category: e.target.value })}
                     className="w-full bg-[#18181b] border border-[#2a2a2d] rounded-lg p-2.5 text-white"
                   >
-                    <option value="CAREGIVER">Caregiver (Elderly / Bedridden)</option>
+                    <option value="CAREGIVER">Caregiver (Assisted / Bedridden)</option>
                     <option value="NURSE">Staff Nurse (GNM / BSc)</option>
                     <option value="ICU_NURSE">ICU / Critical Care Nurse</option>
                     <option value="PHYSIOTHERAPIST">Physiotherapist</option>

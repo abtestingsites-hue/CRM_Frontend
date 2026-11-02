@@ -600,7 +600,7 @@ function CallLogsContent() {
                 className="bg-[#141414] border border-[#262626] rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-orange-500"
               >
                 <option value="">All Foundations</option>
-                <option value="Elder Care">Elder Care</option>
+                <option value="Care Management">Care Management</option>
                 <option value="Home Care">Home Care</option>
                 <option value="Ambulance Services">Ambulance Services</option>
               </select>
@@ -614,7 +614,7 @@ function CallLogsContent() {
                 <option value="">All Services</option>
                 <option value="Doctor at Home">Doctor at Home</option>
                 <option value="Nursing Care at Home">Nursing Care at Home</option>
-                <option value="Elder Care at Home">Elder Care at Home</option>
+                <option value="Care at Home">Care at Home</option>
                 <option value="Ambulance Services">Ambulance Services</option>
                 <option value="Assisted Living">Assisted Living</option>
                 <option value="Dementia / Alzheimer's Care">Dementia Care</option>
@@ -866,7 +866,7 @@ function CallLogsContent() {
                                 {call.requiredService || 'Doctor at Home'}
                               </span>
                               <span className="text-[10px] text-slate-500 block truncate">
-                                {call.foundation || 'Elder Care'}
+                                {call.foundation || 'General Service'}
                               </span>
                             </div>
                           </td>

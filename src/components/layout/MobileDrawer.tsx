@@ -130,12 +130,12 @@ export function MobileDrawer({ isOpen, onClose, shouldShowAgentShell }: MobileDr
                     <Phone className="text-white w-4 h-4" />
                   </div>
                 ) : (
-                  <HeartPulse className="text-primary w-6 h-6" />
+                  <Activity className="text-primary w-6 h-6" />
                 )}
                 <div>
-                  <h2 className="font-bold text-base tracking-tight text-white">ElderCare</h2>
+                  <h2 className="font-bold text-base tracking-tight text-white">CRM Tool</h2>
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                    {shouldShowAgentShell ? "Agent Portal" : "CRM Platform"}
+                    {shouldShowAgentShell ? "Agent Portal" : "Enterprise Platform"}
                   </p>
                 </div>
               </div>

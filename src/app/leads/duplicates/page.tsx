@@ -252,7 +252,7 @@ export default function DuplicateLeadsPage() {
                         </div>
                         <div>
                           <span className="text-slate-500 block">Service:</span>
-                          <span className="text-slate-200 font-semibold truncate block">{review.primaryLead.primaryService || 'Elder Care'}</span>
+                          <span className="text-slate-200 font-semibold truncate block">{review.primaryLead.primaryService || 'General Service'}</span>
                         </div>
                         <div>
                           <span className="text-slate-500 block">Assigned Agent:</span>
@@ -296,7 +296,7 @@ export default function DuplicateLeadsPage() {
                         </div>
                         <div>
                           <span className="text-slate-500 block">Service:</span>
-                          <span className="text-slate-200 font-semibold truncate block">{review.duplicateLead.primaryService || 'Elder Care'}</span>
+                          <span className="text-slate-200 font-semibold truncate block">{review.duplicateLead.primaryService || 'General Service'}</span>
                         </div>
                         <div>
                           <span className="text-slate-500 block">Assigned Agent:</span>

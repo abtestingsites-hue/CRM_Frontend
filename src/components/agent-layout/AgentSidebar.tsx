@@ -54,7 +54,7 @@ export function AgentSidebar() {
           <Phone className="text-white w-4 h-4" />
         </div>
         <div>
-          <h1 className="font-bold text-lg tracking-tight text-white leading-none">ElderCare</h1>
+          <h1 className="font-bold text-lg tracking-tight text-white leading-none">CRM Tool</h1>
           <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">Agent Portal</p>
         </div>
       </div>

@@ -404,7 +404,7 @@ export function CustomerHistoryDrawer({
             {/* Footer */}
             <div className="px-6 py-4 border-t border-[#1a1a1a] bg-[#0c0c0c] flex items-center justify-between">
               <span className="text-[11px] text-slate-500 font-mono">
-                Cross-Unit Intelligence &bull; ElderCare CRM
+                Cross-Unit Intelligence &bull; CRM Tool
               </span>
               <button
                 onClick={onClose}

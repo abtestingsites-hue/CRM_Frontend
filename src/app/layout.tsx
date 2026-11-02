@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ElderCare CRM | Enterprise Agent Dashboard",
-  description: "Omnichannel enterprise CRM for elderly care operations.",
+  title: "CRM Tool | Enterprise Agent Dashboard",
+  description: "Omnichannel enterprise CRM operations platform.",
 };
 
 import { AuthWrapper } from "@/components/layout/AuthWrapper";

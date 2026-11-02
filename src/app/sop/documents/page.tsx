@@ -190,7 +190,7 @@ export default function SopDocumentsPage() {
             <FileText className="w-10 h-10 mx-auto mb-3 opacity-30 text-slate-400" />
             <h3 className="text-sm font-semibold text-slate-300 mb-1">No documents found</h3>
             <p className="text-xs text-slate-500 mb-4">
-              Register standard operational manuals, patient privacy policies, and elder care protocols.
+              Register standard operational manuals, client privacy policies, and operational protocols.
             </p>
             <button
               onClick={() => setIsUploadOpen(true)}
@@ -350,7 +350,7 @@ export default function SopDocumentsPage() {
                   type="text"
                   value={fileUrl}
                   onChange={(e) => setFileUrl(e.target.value)}
-                  placeholder="https://storage.eldercare.com/docs/sop-01.pdf"
+                  placeholder="https://storage.crmtool.com/docs/sop-01.pdf"
                   className="w-full bg-[#141416] border border-[#2a2a2d] rounded-lg px-3 py-1.5 text-xs text-white"
                 />
               </div>

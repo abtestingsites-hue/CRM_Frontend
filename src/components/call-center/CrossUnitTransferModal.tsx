@@ -279,7 +279,7 @@ export function CrossUnitTransferModal({
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Customer requires nursing care and home doctor support after elder care consultation..."
+              placeholder="e.g. Customer requires nursing care and home doctor support after consultation..."
               className="w-full bg-[#141414] border border-[#262626] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-orange-500 resize-none"
             />
           </div>
