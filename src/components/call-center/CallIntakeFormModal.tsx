@@ -39,12 +39,12 @@ const COUNTRY_CODES = [
 ];
 
 const ORGANIZATIONS = [
-  { key: 'UEC', label: 'Universal Elder Care (UEC)' },
+  { key: 'UEC', label: 'Universal Enterprise Care (UEC)' },
   { key: 'UNCF', label: 'Universal Newage Care Foundation (UNCF)' },
   { key: 'ACARE', label: 'ACare / Home Care' },
   { key: 'AMBULANCE', label: 'Ambulance & Emergency Services' },
   { key: 'UHC', label: 'Universal Health Care (UHC)' },
-  { key: 'THATHA_PATTI', label: 'Thatha Patti Elder Care Home' },
+  { key: 'THATHA_PATTI', label: 'Thatha Patti Care Home' },
   { key: 'ZENCURA', label: 'Zencura Health' },
 ];
 
