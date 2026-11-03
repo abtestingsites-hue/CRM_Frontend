@@ -693,6 +693,16 @@ export function CallWidget() {
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showCustomerHistory, setShowCustomerHistory] = useState(false);
+  const [persistedSession, setPersistedSession] = useState<{
+    callSid: string;
+    roomName?: string;
+    phone?: string;
+    customerName?: string;
+    leadId?: string;
+    category?: string;
+    direction?: string;
+    duration?: number;
+  } | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -790,6 +800,22 @@ export function CallWidget() {
     // Reset guard when activeCall changes
     endCallRequestedRef.current = false;
   }, [activeCall?.callSid]);
+
+  // Retain call session information across call disconnection for unhurried documentation
+  useEffect(() => {
+    if (activeCall && activeCall.callSid) {
+      setPersistedSession({
+        callSid: activeCall.callSid,
+        roomName: activeCall.roomName,
+        phone: resolvedCustomerPhone || activeCall.phone,
+        customerName: resolvedCustomerName || activeCall.customerName,
+        leadId: activeCall.leadId,
+        category: activeCall.category,
+        direction: activeCall.direction,
+        duration: duration,
+      });
+    }
+  }, [activeCall, resolvedCustomerPhone, resolvedCustomerName, duration]);
 
   useEffect(() => {
     console.log('[LK-ROOT]', 'render', {
@@ -956,7 +982,7 @@ export function CallWidget() {
     }
   };
 
-  if (!activeCall && callState === 'IDLE' && !showFeedbackModal && !showConversionModal) {
+  if (!activeCall && callState === 'IDLE' && !showFeedbackModal && !showConversionModal && !showIntakeModal) {
     return (
       <div className="text-center w-full max-w-md">
         <div className="w-24 h-24 bg-[#111] rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner shadow-black/50 border border-[#222]">
@@ -978,7 +1004,7 @@ export function CallWidget() {
 
   const customerData = activeCall?.customerContext?.customer;
 
-  if (callState === 'ENDED' && activeCall) {
+  if (callState === 'ENDED' && activeCall && !showIntakeModal) {
     return (
       <>
         <PostCallIntelligenceCard
@@ -1040,133 +1066,153 @@ export function CallWidget() {
 
   const isCallActive = Boolean(activeCall && ['DIALING', 'RINGING', 'CONNECTING', 'CONNECTED'].includes(callState));
 
-  const renderCallCard = () => (
-    <div className="w-full max-w-sm bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#222] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-      {/* Background Glow Effect */}
-      <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${
-        callState === 'CONNECTED' ? 'bg-emerald-500' : 
-        callState === 'RINGING' ? 'bg-primary' : 
-        callState === 'ENDED' ? 'bg-rose-500' : 'bg-blue-500'
-      }`}></div>
+  const renderCallCard = () => {
+    const isDisconnectedOrEnded = callState === 'ENDED' || (!isCallActive && Boolean(persistedSession));
+    const displayName = resolvedCustomerName && resolvedCustomerName !== 'Customer'
+      ? resolvedCustomerName
+      : customerData?.name ||
+        (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
+        persistedSession?.customerName ||
+        resolvedCustomerPhone ||
+        persistedSession?.phone ||
+        'Customer';
+    const displayPhone = resolvedCustomerPhone || customerData?.phone || activeCall?.phone || persistedSession?.phone || 'VoIP WebRTC Link';
+    const displayDuration = duration || persistedSession?.duration || 0;
 
-      <div className="relative z-10">
-        {/* Header Status */}
-        <div className="flex justify-between items-center mb-8">
-          <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${
-            callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-            callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' : 
-            callState === 'ENDED' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-            'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-          }`}>
-            {callState === 'CONNECTED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
-            {callState}
-          </span>
-          {callState === 'CONNECTED' && (
+    return (
+      <div className="w-full max-w-sm bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#222] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+        {/* Background Glow Effect */}
+        <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${
+          callState === 'CONNECTED' ? 'bg-emerald-500' : 
+          callState === 'RINGING' ? 'bg-primary' : 
+          isDisconnectedOrEnded ? 'bg-rose-500' : 'bg-blue-500'
+        }`}></div>
+
+        <div className="relative z-10">
+          {/* Header Status */}
+          <div className="flex justify-between items-center mb-8">
+            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${
+              callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+              callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' : 
+              isDisconnectedOrEnded ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
+              'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+            }`}>
+              {callState === 'CONNECTED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
+              {isDisconnectedOrEnded ? 'CALL DISCONNECTED / WRAP-UP' : callState}
+            </span>
             <span className="font-mono font-bold text-white tracking-widest text-lg flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-500" />
-              {formatTime(duration)}
+              {formatTime(displayDuration)}
             </span>
-          )}
-        </div>
-
-        {/* Profile / Caller Info */}
-        <div className="flex flex-col items-center justify-center mb-10">
-          <div className="relative mb-4">
-            <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${
-              callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' : 
-              callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
-              'border-[#333] bg-[#111] text-white shadow-black'
-            }`}>
-              {((resolvedCustomerName && resolvedCustomerName !== 'Customer' ? resolvedCustomerName : activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : resolvedCustomerPhone) || 'C').substring(0, 1).toUpperCase()}
-            </div>
-            
-            {/* Recording Indicator */}
-            {callState === 'CONNECTED' && (
-              <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-rose-400 shadow-lg animate-pulse">
-                <Circle className="w-3 h-3 fill-current" /> REC
-              </div>
-            )}
           </div>
-          
-          <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
-            {resolvedCustomerName && resolvedCustomerName !== 'Customer'
-              ? resolvedCustomerName
-              : customerData?.name ||
-                (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
-                resolvedCustomerPhone ||
-                'Customer'}
-          </h2>
-          <p className="text-slate-400 flex items-center gap-2 mb-2">
-            {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
-            {resolvedCustomerPhone || customerData?.phone || activeCall?.phone || 'VoIP WebRTC Link'}
-          </p>
-          
-          {/* LiveKit Connection */}
-          {activeCall?.accepted && isLiveKit && (
-            <div className="mt-4 w-full">
-              {audioBlocked && (
-                <div className="mb-4 p-3 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300 text-xs flex items-center justify-between gap-2 shadow-lg animate-pulse">
-                  <span className="font-semibold">Speaker audio paused by browser.</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (roomContextRef.current && typeof roomContextRef.current.startAudio === 'function') {
-                        roomContextRef.current.startAudio().then(() => setAudioBlocked(false)).catch(console.error);
-                      }
-                    }}
-                    className="px-3 py-1 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs shrink-0 shadow"
-                  >
-                    Enable Speaker
-                  </button>
+
+          {/* Profile / Caller Info */}
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="relative mb-4">
+              <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${
+                callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' : 
+                callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
+                isDisconnectedOrEnded ? 'border-rose-500/30 bg-[#111] text-rose-400 shadow-rose-900/20' :
+                'border-[#333] bg-[#111] text-white shadow-black'
+              }`}>
+                {(displayName || 'C').substring(0, 1).toUpperCase()}
+              </div>
+              
+              {/* Recording Indicator */}
+              {callState === 'CONNECTED' && (
+                <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-rose-400 shadow-lg animate-pulse">
+                  <Circle className="w-3 h-3 fill-current" /> REC
                 </div>
               )}
-              <LiveKitRoom
-                key={activeCall.callSid || 'active-call'}
-                serverUrl={activeCall?.serverUrl || activeCall?.wsUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://crm-8q9fuunw.livekit.cloud'}
-                token={activeCall.token}
-                connect={callState !== 'ENDED'}
-                audio={!isMuted} // Pre-warms and publishes audio on initial connection
-                video={false}
-              >
-                <RoomAudioRenderer volume={isSpeaker ? 1 : 0} muted={!isSpeaker} />
-                <LiveKitManager 
-                  setCallState={updateActiveCallStatus} 
-                  setWebrtcConnected={setWebrtcConnected} 
-                  callSid={activeCall.callSid}
-                  isMuted={isMuted}
+            </div>
+            
+            <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
+              {displayName}
+            </h2>
+            <p className="text-slate-400 flex items-center gap-2 mb-2 font-mono text-sm">
+              {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
+              {displayPhone}
+            </p>
+            
+            {/* LiveKit Connection for Active Calls */}
+            {isCallActive && activeCall?.accepted && isLiveKit && (
+              <div className="mt-4 w-full">
+                {audioBlocked && (
+                  <div className="mb-4 p-3 bg-amber-500/20 border border-amber-500/40 rounded-xl text-amber-300 text-xs flex items-center justify-between gap-2 shadow-lg animate-pulse">
+                    <span className="font-semibold">Speaker audio paused by browser.</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (roomContextRef.current && typeof roomContextRef.current.startAudio === 'function') {
+                          roomContextRef.current.startAudio().then(() => setAudioBlocked(false)).catch(console.error);
+                        }
+                      }}
+                      className="px-3 py-1 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs shrink-0 shadow"
+                    >
+                      Enable Speaker
+                    </button>
+                  </div>
+                )}
+                <LiveKitRoom
+                  key={activeCall.callSid || 'active-call'}
+                  serverUrl={activeCall?.serverUrl || activeCall?.wsUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://crm-8q9fuunw.livekit.cloud'}
+                  token={activeCall.token}
+                  connect={callState !== 'ENDED'}
+                  audio={!isMuted} // Pre-warms and publishes audio on initial connection
+                  video={false}
+                >
+                  <RoomAudioRenderer volume={isSpeaker ? 1 : 0} muted={!isSpeaker} />
+                  <LiveKitManager 
+                    setCallState={updateActiveCallStatus} 
+                    setWebrtcConnected={setWebrtcConnected} 
+                    callSid={activeCall.callSid}
+                    isMuted={isMuted}
+                    isSpeaker={isSpeaker}
+                    callCategory={activeCall.category}
+                    telephonySocket={telephonySocket}
+                    onAudioBlockedChange={setAudioBlocked}
+                    onRoomReady={handleRoomReady}
+                  />
+                </LiveKitRoom>
+                <CallControlsInner 
+                  duration={duration} 
+                  endCall={endCall}
+                  connectionState={callState}
                   isSpeaker={isSpeaker}
-                  callCategory={activeCall.category}
-                  telephonySocket={telephonySocket}
-                  onAudioBlockedChange={setAudioBlocked}
-                  onRoomReady={handleRoomReady}
+                  toggleSpeaker={() => setIsSpeaker(!isSpeaker)}
+                  onTransferClick={() => setShowTransferModal(true)}
                 />
-              </LiveKitRoom>
-              <CallControlsInner 
-                duration={duration} 
-                endCall={endCall}
-                connectionState={callState}
-                isSpeaker={isSpeaker}
-                toggleSpeaker={() => setIsSpeaker(!isSpeaker)}
-                onTransferClick={() => setShowTransferModal(true)}
-              />
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Mediasoup Connection State */}
-          {activeCall?.accepted && !isLiveKit && (
-            <div className="mt-4 w-full">
-              <CallControlsInner 
-                duration={duration} 
-                endCall={endCall}
-                connectionState={callState}
-                isSpeaker={isSpeaker}
-                toggleSpeaker={() => setIsSpeaker(!isSpeaker)}
-                onTransferClick={() => setShowTransferModal(true)}
-              />
-            </div>
-          )}
-          {/* Action triggers: Pre-Call/Active-Call Customer History & Intake */}
-          {activeCall && (
+            {/* Mediasoup Connection State for Active Calls */}
+            {isCallActive && activeCall?.accepted && !isLiveKit && (
+              <div className="mt-4 w-full">
+                <CallControlsInner 
+                  duration={duration} 
+                  endCall={endCall}
+                  connectionState={callState}
+                  isSpeaker={isSpeaker}
+                  toggleSpeaker={() => setIsSpeaker(!isSpeaker)}
+                  onTransferClick={() => setShowTransferModal(true)}
+                />
+              </div>
+            )}
+
+            {/* Post-Disconnection Documentation Notice */}
+            {isDisconnectedOrEnded && (
+              <div className="w-full mt-4 p-4 rounded-2xl bg-[#111822] border border-[#1e2a38] text-center space-y-2">
+                <div className="flex items-center justify-center gap-1.5 text-orange-400 text-xs font-bold">
+                  <FileText className="w-4 h-4" />
+                  <span>Call Concluded • Documentation Active</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Call audio has concluded. The intake form on the left remains active with all entered notes preserved. Please complete and click <strong>Save & Link Lead Record</strong>.
+                </p>
+              </div>
+            )}
+
+            {/* Action triggers: Pre-Call/Active-Call Customer History & Intake */}
             <div className="w-full flex gap-2 mt-4">
               <button
                 type="button"
@@ -1191,27 +1237,30 @@ export function CallWidget() {
                 <span>{showIntakeModal ? 'Intake Active' : 'Intake & Notes'}</span>
               </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // During active calls, when Intake Form is active, present split side-by-side full screen layout
-  if (isCallActive && showIntakeModal) {
+  // During active calls or post-disconnect documentation, present split side-by-side full screen layout
+  if (showIntakeModal && (isCallActive || callState === 'ENDED' || persistedSession)) {
     return (
       <div className="fixed inset-0 z-50 bg-[#06090e]/95 backdrop-blur-md p-4 sm:p-6 flex flex-col lg:flex-row items-stretch gap-4 sm:gap-6 overflow-hidden animate-in fade-in duration-200">
         {/* Left Side: Intake Form (Full Screen Left) */}
         <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
           <CallIntakeFormModal
-            callSid={activeCall?.callSid || activeCall?.roomName || 'unknown'}
-            customerName={resolvedCustomerName}
-            phoneNumber={resolvedCustomerPhone}
-            leadId={activeCall?.leadId}
+            callSid={activeCall?.callSid || persistedSession?.callSid || 'unknown'}
+            customerName={resolvedCustomerName || persistedSession?.customerName}
+            phoneNumber={resolvedCustomerPhone || persistedSession?.phone}
+            leadId={activeCall?.leadId || persistedSession?.leadId}
             isOpen={true}
             embedded={true}
             onClose={() => setShowIntakeModal(false)}
-            onSuccess={() => setShowIntakeModal(false)}
+            onSuccess={() => {
+              setShowIntakeModal(false);
+              setPersistedSession(null);
+            }}
           />
         </div>
 
@@ -1222,7 +1271,7 @@ export function CallWidget() {
 
         {showTransferModal && (
           <CallTransferModal
-            callSid={activeCall?.callSid || activeCall?.roomName || 'unknown'}
+            callSid={activeCall?.callSid || persistedSession?.callSid || 'unknown'}
             isOpen={showTransferModal}
             onClose={() => setShowTransferModal(false)}
             onSuccess={() => {
@@ -1230,14 +1279,14 @@ export function CallWidget() {
               setActiveCall(null);
               setStatus('AVAILABLE');
             }}
-            callerName={resolvedCustomerName}
-            callerPhone={resolvedCustomerPhone}
+            callerName={resolvedCustomerName || persistedSession?.customerName}
+            callerPhone={resolvedCustomerPhone || persistedSession?.phone}
           />
         )}
 
         {showCustomerHistory && (
           <CustomerHistoryDrawer
-            identifier={resolvedCustomerPhone || resolvedCustomerName || ''}
+            identifier={resolvedCustomerPhone || persistedSession?.phone || resolvedCustomerName || persistedSession?.customerName || ''}
             isOpen={showCustomerHistory}
             onClose={() => setShowCustomerHistory(false)}
           />

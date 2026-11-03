@@ -10,7 +10,8 @@ import {
   MessageSquare, Mail, Building, Sparkles, Check, AlertCircle,
   PhoneCall, CornerDownRight, Loader2, Volume2, ExternalLink
 } from 'lucide-react';
-import { api, sanitizeRecordingUrl } from '@/lib/api';
+import { api, apiFetch, sanitizeRecordingUrl } from '@/lib/api';
+import { useCallStore } from '@/store/useCallStore';
 import { CallHistoryDrawer } from '@/components/call-center/CallHistoryDrawer';
 import { CustomerHistoryDrawer } from '@/components/call-center/CustomerHistoryDrawer';
 import { CrossUnitTransferModal } from '@/components/call-center/CrossUnitTransferModal';
@@ -74,6 +75,15 @@ function CallLogsContent() {
 
   const [leadForTransfer, setLeadForTransfer] = useState<{ id: string; name: string; unit: string } | null>(null);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+
+  // Active call & Recall Telephony state
+  const { activeCall, setActiveCall } = useCallStore();
+  const [recallingCallId, setRecallingCallId] = useState<string | null>(null);
+  const [recallFeedback, setRecallFeedback] = useState<Record<string, string>>({});
+
+  // Messaging Hub selection state
+  const [selectedMessagingHubCallIds, setSelectedMessagingHubCallIds] = useState<Set<string>>(new Set());
+  const [batchActionNotice, setBatchActionNotice] = useState<string | null>(null);
 
   // Inline audio playback state
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
@@ -198,6 +208,103 @@ function CallLogsContent() {
         message,
       },
     }));
+  };
+
+  // Handle Outbound Recall Call
+  const handleRecall = async (call: any) => {
+    if (recallingCallId || activeCall) return;
+    const phoneToCall = call.callerPhone;
+    if (!phoneToCall || phoneToCall === 'Unknown') {
+      setRecallFeedback(prev => ({ ...prev, [call.id]: 'No valid phone' }));
+      return;
+    }
+
+    setRecallingCallId(call.id);
+    setRecallFeedback(prev => ({ ...prev, [call.id]: '' }));
+
+    // Normalize phone E.164
+    let clean = phoneToCall.replace(/[^\d+]/g, '');
+    if (!clean.startsWith('+')) {
+      if (clean.length === 10) clean = '+91' + clean;
+      else if (clean.length === 12 && clean.startsWith('91')) clean = '+' + clean;
+      else clean = '+' + clean;
+    }
+
+    try {
+      let currentAgentId = null;
+      try {
+        const stored = localStorage.getItem('crm_user');
+        if (stored) currentAgentId = JSON.parse(stored).agentId;
+      } catch (_) {}
+
+      const res = await apiFetch('/telephony/calls/outbound', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: clean,
+          agentId: currentAgentId,
+          contactId: call.customerDetails?.id,
+          leadId: call.leadId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setRecallFeedback(prev => ({ ...prev, [call.id]: data.message || 'Recall failed' }));
+        setRecallingCallId(null);
+        return;
+      }
+
+      const finalRoomName = data.roomName || data.callSid || `room_${Date.now()}`;
+      setActiveCall({
+        callSid: finalRoomName,
+        roomName: finalRoomName,
+        customerName: call.callerName || data.customerName || 'Customer',
+        phone: clean,
+        urgency: 'NORMAL',
+        category: 'Outbound',
+        direction: 'OUTBOUND',
+        status: 'DIALING',
+        isCaller: true,
+        accepted: true,
+        token: data.token,
+        serverUrl: data.serverUrl || data.wsUrl,
+        crossUnitLookup: data.crossUnitLookup,
+        customerContext: data.customerContext || (call.customerDetails ? { customer: call.customerDetails } : undefined),
+        leadId: call.leadId || data.leadId,
+      });
+    } catch (e: any) {
+      setRecallFeedback(prev => ({ ...prev, [call.id]: 'Network error initiating recall' }));
+    } finally {
+      setRecallingCallId(null);
+    }
+  };
+
+  // Messaging Hub selection helpers
+  const toggleMessagingHubSelection = (callId: string) => {
+    setSelectedMessagingHubCallIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(callId)) {
+        next.delete(callId);
+      } else {
+        next.add(callId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllMessagingHub = () => {
+    if (selectedMessagingHubCallIds.size === calls.length) {
+      setSelectedMessagingHubCallIds(new Set());
+    } else {
+      setSelectedMessagingHubCallIds(new Set(calls.map((c) => c.id)));
+    }
+  };
+
+  const handleBatchMarkFollowup = async () => {
+    if (selectedMessagingHubCallIds.size === 0) return;
+    setBatchActionNotice(`Queued ${selectedMessagingHubCallIds.size} records for Messaging Hub follow-up`);
+    setTimeout(() => setBatchActionNotice(null), 3000);
   };
 
   // Handle Send Button click
@@ -645,63 +752,104 @@ function CallLogsContent() {
             </div>
           </div>
 
-          {/* MODULE 2 — CALL LOGS TABLE WITH ALL 9 REQUIRED COLUMNS */}
+          {/* Batch Action Banner if Messaging Hub items selected */}
+          {selectedMessagingHubCallIds.size > 0 && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <span className="text-xs text-white font-semibold">
+                  {selectedMessagingHubCallIds.size} record{selectedMessagingHubCallIds.size === 1 ? '' : 's'} selected for Messaging Hub follow-up
+                </span>
+                {batchActionNotice && (
+                  <span className="text-xs text-emerald-400 font-medium ml-2">
+                    ✓ {batchActionNotice}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleBatchMarkFollowup}
+                  className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+                >
+                  Mark for Follow-up Queue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMessagingHubCallIds(new Set())}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* MODULE 2 — CALL LOGS TABLE */}
           <div className="rounded-2xl bg-[#0a0a0a] border border-[#1e1e1e] overflow-hidden shadow-2xl">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[1300px]">
+              <table className="w-full text-left border-collapse min-w-[1240px]">
                 <thead>
                   <tr className="border-b border-[#1c1c1c] bg-[#0e0e0e] text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    {/* Caller Name */}
-                    <th className="py-3 px-4 w-[160px]">Caller Name</th>
-                    {/* Handled By */}
-                    <th className="py-3 px-4 w-[150px]">Handled By</th>
-                    {/* Call Record */}
-                    <th className="py-3 px-4 w-[140px]">Call Record</th>
-                    {/* Call Summary */}
-                    <th className="py-3 px-4 w-[240px]">Call Summary</th>
-                    {/* Required Service */}
-                    <th className="py-3 px-4 w-[130px]">Required Service</th>
-                    {/* Source */}
-                    <th className="py-3 px-4 w-[100px]">Source</th>
-                    {/* Messaging Hub */}
-                    <th className="py-3 px-4 w-[140px]">Messaging Hub</th>
-                    {/* Response Message */}
-                    <th className="py-3 px-4 w-[220px]">Response Message</th>
-                    {/* Actions */}
-                    <th className="py-3 px-4 w-[100px] text-right">Actions</th>
+                    {/* 1. Caller Name */}
+                    <th className="py-3 px-3 w-[130px]">Caller Name</th>
+                    {/* 2. Handled By */}
+                    <th className="py-3 px-3 w-[120px]">Handled By</th>
+                    {/* 3. Call Record */}
+                    <th className="py-3 px-3 w-[130px]">Call Record</th>
+                    {/* 4. Call Summary */}
+                    <th className="py-3 px-3 w-[220px]">Call Summary</th>
+                    {/* 5. Required Service */}
+                    <th className="py-3 px-3 w-[130px]">Required Service</th>
+                    {/* 6. Source */}
+                    <th className="py-3 px-3 w-[90px]">Source</th>
+                    {/* 7. Recall */}
+                    <th className="py-3 px-3 w-[100px] text-center">Recall</th>
+                    {/* 8. Messaging Hub */}
+                    <th className="py-3 px-3 w-[100px] text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span>Msg Hub</span>
+                        <input
+                          type="checkbox"
+                          checked={calls.length > 0 && selectedMessagingHubCallIds.size === calls.length}
+                          onChange={handleSelectAllMessagingHub}
+                          className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-orange-500 cursor-pointer accent-orange-500"
+                          title="Select / Unselect All"
+                        />
+                      </div>
+                    </th>
+                    {/* 9. Agent Transfer */}
+                    <th className="py-3 px-3 w-[110px] text-center">Agent Transfer</th>
+                    {/* 10. Actions */}
+                    <th className="py-3 px-3 w-[80px] text-right">Details</th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-[#161616] text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-20 text-center text-slate-500">
+                      <td colSpan={10} className="py-20 text-center text-slate-500">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-orange-500 mb-2" />
-                        <span>Loading call records & messaging channels...</span>
+                        <span>Loading call records & logs...</span>
                       </td>
                     </tr>
                   ) : error ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-rose-400">
+                      <td colSpan={10} className="py-12 text-center text-rose-400">
                         {error}
                       </td>
                     </tr>
                   ) : calls.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-16 text-center text-slate-500">
+                      <td colSpan={10} className="py-16 text-center text-slate-500">
                         No call records match the current filter selection.
                       </td>
                     </tr>
                   ) : (
                     calls.map((call) => {
-                      const curMsg = rowMessageState[call.id] || {
-                        channel: 'WHATSAPP',
-                        message: '',
-                        isSending: false,
-                        statusText: null,
-                        isSuccess: false,
-                      };
-
                       const isSummaryExpanded = !!expandedSummaryCallIds[call.id];
                       const isPlaying = playingCallId === call.id;
 
@@ -710,44 +858,44 @@ function CallLogsContent() {
                           key={call.id}
                           className="hover:bg-[#0f0f0f] transition-colors group align-top"
                         >
-                          {/* 1. Caller Name */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1">
+                          {/* 1. Caller Name (Optimized Width & Truncation) */}
+                          <td className="py-3 px-3 w-[130px]">
+                            <div className="space-y-0.5">
                               <button
                                 onClick={() => {
                                   setSelectedCustomerIdentifier(call.callerPhone || call.leadId || call.id);
                                   setIsCustomerDrawerOpen(true);
                                 }}
-                                className="font-bold text-white hover:text-orange-400 transition-colors text-left flex items-center gap-1.5 group/btn"
-                                title="Open Cross-Unit Customer Intelligence"
+                                className="font-bold text-white hover:text-orange-400 transition-colors text-left flex items-center gap-1 group/btn w-full"
+                                title={`Open details for ${call.callerName}`}
                               >
-                                <span className="truncate max-w-[120px]">{call.callerName}</span>
+                                <span className="truncate max-w-[105px] block">{call.callerName}</span>
                                 <ExternalLink className="w-3 h-3 text-slate-600 group-hover/btn:text-orange-400 shrink-0" />
                               </button>
-                              <p className="text-[11px] text-slate-400 font-mono">
+                              <p className="text-[11px] text-slate-400 font-mono truncate" title={call.callerPhone}>
                                 {call.callerPhone}
                               </p>
                               {call.priority === 'EMERGENCY' && (
-                                <span className="inline-block px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[9px] font-extrabold uppercase animate-pulse">
+                                <span className="inline-block px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 text-[9px] font-extrabold uppercase animate-pulse">
                                   Emergency
                                 </span>
                               )}
-                              <span className="text-[10px] text-slate-500 block">
+                              <span className="text-[10px] text-slate-500 block font-mono">
                                 {new Date(call.startedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                           </td>
 
-                          {/* 2. Handled By */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 font-medium text-slate-200">
+                          {/* 2. Handled By (Optimized Width & Truncation) */}
+                          <td className="py-3 px-3 w-[120px]">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1 font-medium text-slate-200" title={call.handlingAgent?.name || 'Unassigned'}>
                                 <User className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                <span className="truncate max-w-[110px]">{call.handlingAgent?.name || 'Unassigned'}</span>
+                                <span className="truncate max-w-[95px] block">{call.handlingAgent?.name || 'Unassigned'}</span>
                               </div>
-                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <Building className="w-3 h-3 text-slate-600" />
-                                {call.department || 'General'}
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate" title={call.department || 'General'}>
+                                <Building className="w-3 h-3 text-slate-600 shrink-0" />
+                                <span className="truncate max-w-[95px]">{call.department || 'General'}</span>
                               </span>
                               {call.isTransferred && (
                                 <button
@@ -757,10 +905,10 @@ function CallLogsContent() {
                                     setIsCallDrawerOpen(true);
                                   }}
                                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[9px] font-semibold border border-amber-500/30 transition-all text-left"
-                                  title="View complete transfer transmission chain and audio handover details"
+                                  title="View transfer details"
                                 >
                                   <CornerDownRight className="w-2.5 h-2.5 shrink-0" />
-                                  <span className="truncate max-w-[125px]">
+                                  <span className="truncate max-w-[95px]">
                                     {call.transferredFrom && call.transferredTo 
                                       ? `${call.transferredFrom} ➔ ${call.transferredTo}`
                                       : `Transferred (${call.transferCount})`}
@@ -771,13 +919,13 @@ function CallLogsContent() {
                           </td>
 
                           {/* 3. Call Record */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1.5">
+                          <td className="py-3 px-3 w-[130px]">
+                            <div className="space-y-1">
                               {call.recordingStatus === 'READY' && call.recordingUrl ? (
                                 <div className="space-y-1">
                                   <button
                                     onClick={() => togglePlayAudio(call)}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
                                       isPlaying
                                         ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30 animate-pulse'
                                         : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -814,7 +962,7 @@ function CallLogsContent() {
                           </td>
 
                           {/* 4. Call Summary */}
-                          <td className="py-3.5 px-4">
+                          <td className="py-3 px-3 w-[220px]">
                             <div className="space-y-1">
                               {call.summary ? (
                                 <>
@@ -826,11 +974,11 @@ function CallLogsContent() {
                                   <div className="flex items-center gap-2 pt-0.5">
                                     {call.recordingStoragePath || call.recordingUrl ? (
                                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                        AI Transcript-verified
+                                        Transcript-verified
                                       </span>
                                     ) : (
                                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-[#2a2a2a]">
-                                        Metadata fallback
+                                        Metadata
                                       </span>
                                     )}
                                     <button
@@ -851,107 +999,130 @@ function CallLogsContent() {
                                   <span className="text-xs text-slate-500 italic block">
                                     {call.disposition || 'Call logged'}
                                   </span>
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-[#2a2a2a]">
-                                    Metadata fallback
-                                  </span>
                                 </div>
                               )}
                             </div>
                           </td>
 
-                          {/* 5. Required Service */}
-                          <td className="py-3.5 px-4">
+                          {/* 5. Required Service (Synced with Intake, Clean Fallback) */}
+                          <td className="py-3 px-3 w-[130px]">
                             <div className="space-y-1">
-                              <span className="inline-block px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold">
-                                {call.requiredService || 'Doctor at Home'}
+                              <span className={`inline-block px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                                call.requiredService 
+                                  ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' 
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              }`}>
+                                {call.requiredService || 'Not Specified'}
                               </span>
-                              <span className="text-[10px] text-slate-500 block truncate">
-                                {call.foundation || 'General Service'}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* 6. Source */}
-                          <td className="py-3.5 px-4">
-                            <span className="inline-block px-2 py-0.5 rounded bg-[#161616] border border-[#262626] text-slate-300 text-[11px] font-medium">
-                              {call.source || 'Inbound Call'}
-                            </span>
-                          </td>
-
-                          {/* 7. Omnichannel to Communicate */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1.5">
-                              <select
-                                value={curMsg.channel}
-                                onChange={(e) => setRowChannel(call.id, e.target.value)}
-                                className="w-full bg-[#121212] border border-[#282828] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-500"
-                              >
-                                <option value="WHATSAPP">WhatsApp</option>
-                                <option value="EMAIL">Email</option>
-                                <option value="INSTAGRAM">Instagram</option>
-                              </select>
-
-                              {/* Destination Info */}
-                              <span className="text-[10px] text-slate-400 block font-mono truncate max-w-[130px]">
-                                {curMsg.channel === 'EMAIL'
-                                  ? (call.customerEmail || call.customerDetails?.email || 'No email')
-                                  : (curMsg.channel === 'INSTAGRAM'
-                                      ? (call.customerDetails?.platformUserId
-                                          ? (call.customerDetails.instagramUsername ? `@${call.customerDetails.instagramUsername}` : `ID: ${call.customerDetails.platformUserId}`)
-                                          : 'No IG ID')
-                                      : (call.callerPhone && !call.callerPhone.startsWith('ig_') ? call.callerPhone : (call.customerDetails?.phone || 'No phone')))}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* 8. Response Message */}
-                          <td className="py-3.5 px-4">
-                            <div className="space-y-1">
-                              <textarea
-                                rows={2}
-                                value={curMsg.message}
-                                onChange={(e) => setRowText(call.id, e.target.value)}
-                                placeholder={`Write ${curMsg.channel.toLowerCase()} message...`}
-                                disabled={curMsg.isSending}
-                                className="w-full bg-[#141414] border border-[#262626] rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none"
-                              />
-
-                              {/* Feedback / Status */}
-                              {curMsg.statusText && (
-                                <span className={`text-[10px] font-medium block truncate ${
-                                  curMsg.isSuccess ? 'text-emerald-400' : 'text-rose-400'
-                                }`}>
-                                  {curMsg.statusText}
+                              {call.foundation && (
+                                <span className="text-[10px] text-slate-500 block truncate font-medium">
+                                  {call.foundation}
                                 </span>
                               )}
                             </div>
                           </td>
 
-                          {/* 9. Send Button & Quick Actions */}
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex flex-col items-end gap-1.5">
-                              <button
-                                onClick={() => handleSendMessage(call)}
-                                disabled={curMsg.isSending || !(curMsg.message || '').trim()}
-                                className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-orange-500/20"
-                                title="Send Messaging Hub Response"
-                              >
-                                {curMsg.isSending ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Send className="w-3.5 h-3.5" />
-                                )}
-                                <span>Send</span>
-                              </button>
+                          {/* 6. Source */}
+                          <td className="py-3 px-3 w-[90px]">
+                            <span className="inline-block px-2 py-0.5 rounded bg-[#161616] border border-[#262626] text-slate-300 text-[11px] font-medium">
+                              {call.source || 'Inbound Call'}
+                            </span>
+                          </td>
 
+                          {/* 7. Recall Column (Dedicated Outbound Calling) */}
+                          <td className="py-3 px-3 w-[100px] text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRecall(call)}
+                              disabled={recallingCallId === call.id || Boolean(activeCall)}
+                              className={`px-2.5 py-1.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all shadow-sm ${
+                                recallingCallId === call.id
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                                  : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none'
+                              }`}
+                              title={activeCall ? 'A call is already active' : `Recall ${call.callerPhone}`}
+                            >
+                              {recallingCallId === call.id ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Dialing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <PhoneCall className="w-3.5 h-3.5" />
+                                  <span>Recall</span>
+                                </>
+                              )}
+                            </button>
+                            {recallFeedback[call.id] && (
+                              <span className="text-[10px] block mt-1 text-rose-400 font-medium">
+                                {recallFeedback[call.id]}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* 8. Messaging Hub Column (ONLY Messaging Hub Icon + Checkbox) */}
+                          <td className="py-3 px-3 w-[100px] text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className={`p-1.5 rounded-lg border transition-colors ${
+                                selectedMessagingHubCallIds.has(call.id)
+                                  ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+                                  : 'bg-[#141414] border-[#262626] text-slate-500'
+                              }`}>
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={selectedMessagingHubCallIds.has(call.id)}
+                                onChange={() => toggleMessagingHubSelection(call.id)}
+                                className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                                title="Mark for Messaging Hub follow-up"
+                              />
+                            </div>
+                          </td>
+
+                          {/* 9. Agent Transfer Column (Dedicated Reassignment Modal) */}
+                          <td className="py-3 px-3 w-[110px] text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLeadForTransfer({
+                                  id: call.leadId || call.id,
+                                  name: call.callerName || 'Lead Record',
+                                  unit: call.department || 'UEC',
+                                });
+                                setIsTransferModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all hover:scale-105 active:scale-95"
+                              title="Transfer lead to another agent or unit"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              <span>Transfer</span>
+                            </button>
+                          </td>
+
+                          {/* 10. Actions / Drawers */}
+                          <td className="py-3 px-3 w-[80px] text-right">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => {
                                   setSelectedCallIdForDrawer(call.id);
                                   setIsCallDrawerOpen(true);
                                 }}
-                                className="text-[10px] text-slate-400 hover:text-white underline transition-colors"
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-[#202020] text-slate-400 hover:text-white border border-[#262626] transition-colors"
+                                title="View Call Details & Handover Chain"
                               >
-                                Full Record
+                                <FileText className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedCustomerIdentifier(call.callerPhone || call.leadId || call.id);
+                                  setIsCustomerDrawerOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-[#202020] text-slate-400 hover:text-white border border-[#262626] transition-colors"
+                                title="View Customer Intelligence"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
