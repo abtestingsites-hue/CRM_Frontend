@@ -17,6 +17,7 @@ export interface CallIntakeFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (lead?: any) => void;
+  embedded?: boolean;
 }
 
 export function CallIntakeFormModal({
@@ -28,6 +29,7 @@ export function CallIntakeFormModal({
   isOpen,
   onClose,
   onSuccess,
+  embedded = false,
 }: CallIntakeFormModalProps) {
   // Service catalog state
   const [foundations, setFoundations] = useState<any[]>([]);
@@ -334,31 +336,43 @@ export function CallIntakeFormModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="bg-[#0b1015] border border-[#1e2933] rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden text-slate-200 text-xs animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* HEADER */}
-        <div className="p-4 px-6 border-b border-[#1e2933] bg-[#0f171f] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
-              <Phone className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-sm">
-                {callSid ? 'Call Intake & Structured Disposition' : leadId ? 'Edit Lead Enquiry & Structured Intake' : 'New Lead Enquiry Intake'}
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {callSid ? `Call ID: ${callSid.slice(0, 24)}...` : leadId ? `Lead ID: ${leadId.slice(0, 8)}...` : 'Manual Structured Entry'} • Direct CRM Database Record
-              </p>
-            </div>
-          </div>
+  if (!isOpen) return null;
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 font-semibold text-[11px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
-            <span>Mandatory Intake • Submit to Complete</span>
+  const innerContent = (
+    <div className={`bg-[#0b1015] border border-[#1e2933] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-200 text-xs ${
+      embedded ? 'w-full h-full' : 'w-full max-w-3xl max-h-[92vh] animate-in fade-in zoom-in-95 duration-200'
+    }`}>
+      {/* HEADER */}
+      <div className="p-4 px-6 border-b border-[#1e2933] bg-[#0f171f] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+            <Phone className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm">
+              {callSid ? 'Call Intake & Structured Disposition' : leadId ? 'Edit Lead Enquiry & Structured Intake' : 'New Lead Enquiry Intake'}
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              {callSid ? `Call ID: ${callSid.slice(0, 24)}...` : leadId ? `Lead ID: ${leadId.slice(0, 8)}...` : 'Manual Structured Entry'} • Direct CRM Database Record
+            </p>
           </div>
         </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 font-semibold text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+            <span>Mandatory Intake</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+            title="Close / Minimize Intake"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
         {/* FORM CONTENT */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
@@ -788,7 +802,16 @@ export function CallIntakeFormModal({
             </button>
           </div>
         </form>
-      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return innerContent;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+      {innerContent}
     </div>
   );
 }

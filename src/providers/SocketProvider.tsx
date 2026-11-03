@@ -310,20 +310,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('[INBOUND-CALL] callRoomUpdated received:', data);
       const { incomingCall, activeCall, setIncomingCall, setActiveCall } = useCallStore.getState();
       const targetCallSid = data.callSid || data.callId;
-      if (incomingCall && (incomingCall.callSid === targetCallSid || incomingCall.roomName === targetCallSid || (incomingCall as any).id === targetCallSid)) {
+      if (incomingCall && (incomingCall.callSid === targetCallSid || incomingCall.roomName === targetCallSid || (incomingCall as any).id === targetCallSid || (incomingCall as any).sessionId === targetCallSid)) {
         setIncomingCall({
           ...incomingCall,
-          roomName: data.roomName,
-          token: data.token,
+          roomName: data.roomName || incomingCall.roomName,
+          token: data.token || incomingCall.token,
           serverUrl: data.serverUrl || data.wsUrl || incomingCall.serverUrl,
           wsUrl: data.wsUrl || data.serverUrl || incomingCall.wsUrl,
         });
       }
-      if (activeCall && (activeCall.callSid === targetCallSid || activeCall.roomName === targetCallSid || (activeCall as any).id === targetCallSid)) {
+      if (activeCall && (activeCall.callSid === targetCallSid || activeCall.roomName === targetCallSid || (activeCall as any).id === targetCallSid || (activeCall as any).sessionId === targetCallSid)) {
         setActiveCall({
           ...activeCall,
-          roomName: data.roomName,
-          token: data.token,
+          roomName: data.roomName || activeCall.roomName,
+          token: data.token || activeCall.token,
           serverUrl: data.serverUrl || data.wsUrl || activeCall.serverUrl,
           wsUrl: data.wsUrl || data.serverUrl || activeCall.wsUrl,
         });
@@ -334,11 +334,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('[INBOUND-CALL] callAcceptedConfirmed received:', data);
       const { activeCall, setActiveCall } = useCallStore.getState();
       const targetCallSid = data.callSid || data.callId;
-      if (activeCall && (activeCall.callSid === targetCallSid || activeCall.roomName === targetCallSid || (activeCall as any).id === targetCallSid)) {
+      if (activeCall && (activeCall.callSid === targetCallSid || activeCall.roomName === targetCallSid || (activeCall as any).id === targetCallSid || (activeCall as any).sessionId === targetCallSid)) {
+        // Prevent reverting a real SIP room back to a synthetic room name
+        const isCurrentRoomRealSip = activeCall.roomName && (activeCall.roomName.startsWith('call-') || activeCall.roomName.includes('_+'));
+        const isNewRoomSynthetic = data.roomName && data.roomName.startsWith('call_') && !data.roomName.includes('_+');
+        const nextRoomName = (isCurrentRoomRealSip && isNewRoomSynthetic) ? activeCall.roomName : (data.roomName || activeCall.roomName);
+        const nextToken = (isCurrentRoomRealSip && isNewRoomSynthetic && activeCall.token) ? activeCall.token : (data.token || activeCall.token);
+
         setActiveCall({
           ...activeCall,
-          roomName: data.roomName,
-          token: data.token,
+          roomName: nextRoomName,
+          token: nextToken,
           serverUrl: data.serverUrl || data.wsUrl || activeCall.serverUrl,
           wsUrl: data.wsUrl || data.serverUrl || activeCall.wsUrl,
         });

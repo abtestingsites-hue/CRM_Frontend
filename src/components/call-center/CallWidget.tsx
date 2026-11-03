@@ -1038,68 +1038,69 @@ export function CallWidget() {
     );
   }
 
-  return (
-    <>
-      <div className="w-full max-w-sm bg-[#0a0a0a]/80 backdrop-blur-xl border border-[#222] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
-        {/* Background Glow Effect */}
-        <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${
-          callState === 'CONNECTED' ? 'bg-emerald-500' : 
-          callState === 'RINGING' ? 'bg-primary' : 
-          callState === 'ENDED' ? 'bg-rose-500' : 'bg-blue-500'
-        }`}></div>
+  const isCallActive = Boolean(activeCall && ['DIALING', 'RINGING', 'CONNECTING', 'CONNECTED'].includes(callState));
 
-        <div className="relative z-10">
-          {/* Header Status */}
-          <div className="flex justify-between items-center mb-8">
-            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${
-              callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-              callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' : 
-              callState === 'ENDED' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-              'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-            }`}>
-              {callState === 'CONNECTED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
-              {callState}
+  const renderCallCard = () => (
+    <div className="w-full max-w-sm bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#222] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      {/* Background Glow Effect */}
+      <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${
+        callState === 'CONNECTED' ? 'bg-emerald-500' : 
+        callState === 'RINGING' ? 'bg-primary' : 
+        callState === 'ENDED' ? 'bg-rose-500' : 'bg-blue-500'
+      }`}></div>
+
+      <div className="relative z-10">
+        {/* Header Status */}
+        <div className="flex justify-between items-center mb-8">
+          <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${
+            callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+            callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' : 
+            callState === 'ENDED' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
+            'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+          }`}>
+            {callState === 'CONNECTED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
+            {callState}
+          </span>
+          {callState === 'CONNECTED' && (
+            <span className="font-mono font-bold text-white tracking-widest text-lg flex items-center gap-2">
+              <Clock className="w-4 h-4 text-slate-500" />
+              {formatTime(duration)}
             </span>
-            {callState === 'CONNECTED' && (
-              <span className="font-mono font-bold text-white tracking-widest text-lg flex items-center gap-2">
-                <Clock className="w-4 h-4 text-slate-500" />
-                {formatTime(duration)}
-              </span>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Profile / Caller Info */}
-          <div className="flex flex-col items-center justify-center mb-10">
-            <div className="relative mb-4">
-              <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${
-                callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' : 
-                callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
-                'border-[#333] bg-[#111] text-white shadow-black'
-              }`}>
-                {((resolvedCustomerName && resolvedCustomerName !== 'Customer' ? resolvedCustomerName : activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : resolvedCustomerPhone) || 'C').substring(0, 1).toUpperCase()}
-              </div>
-              
-              {/* Recording Indicator */}
-              {callState === 'CONNECTED' && (
-                <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-rose-400 shadow-lg animate-pulse">
-                  <Circle className="w-3 h-3 fill-current" /> REC
-                </div>
-              )}
+        {/* Profile / Caller Info */}
+        <div className="flex flex-col items-center justify-center mb-10">
+          <div className="relative mb-4">
+            <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${
+              callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' : 
+              callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
+              'border-[#333] bg-[#111] text-white shadow-black'
+            }`}>
+              {((resolvedCustomerName && resolvedCustomerName !== 'Customer' ? resolvedCustomerName : activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : resolvedCustomerPhone) || 'C').substring(0, 1).toUpperCase()}
             </div>
             
-            <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
-              {resolvedCustomerName && resolvedCustomerName !== 'Customer'
-                ? resolvedCustomerName
-                : customerData?.name ||
-                  (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
-                  resolvedCustomerPhone ||
-                  'Customer'}
-            </h2>
-            <p className="text-slate-400 flex items-center gap-2 mb-2">
-              {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
-              {resolvedCustomerPhone || customerData?.phone || activeCall?.phone || 'VoIP WebRTC Link'}
-            </p>
-            
+            {/* Recording Indicator */}
+            {callState === 'CONNECTED' && (
+              <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-rose-400 shadow-lg animate-pulse">
+                <Circle className="w-3 h-3 fill-current" /> REC
+              </div>
+            )}
+          </div>
+          
+          <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
+            {resolvedCustomerName && resolvedCustomerName !== 'Customer'
+              ? resolvedCustomerName
+              : customerData?.name ||
+                (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
+                resolvedCustomerPhone ||
+                'Customer'}
+          </h2>
+          <p className="text-slate-400 flex items-center gap-2 mb-2">
+            {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
+            {resolvedCustomerPhone || customerData?.phone || activeCall?.phone || 'VoIP WebRTC Link'}
+          </p>
+          
           {/* LiveKit Connection */}
           {activeCall?.accepted && isLiveKit && (
             <div className="mt-4 w-full">
@@ -1120,8 +1121,8 @@ export function CallWidget() {
                 </div>
               )}
               <LiveKitRoom
-                key={`${activeCall.callSid}_${activeCall.roomName}`}
-                serverUrl={activeCall?.serverUrl || activeCall?.wsUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://23jy3gv6xcs.livekit.cloud'}
+                key={activeCall.callSid || 'active-call'}
+                serverUrl={activeCall?.serverUrl || activeCall?.wsUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://crm-8q9fuunw.livekit.cloud'}
                 token={activeCall.token}
                 connect={callState !== 'ENDED'}
                 audio={!isMuted} // Pre-warms and publishes audio on initial connection
@@ -1179,17 +1180,75 @@ export function CallWidget() {
 
               <button
                 type="button"
-                onClick={() => setShowIntakeModal(true)}
-                className="flex-1 py-2 px-2.5 rounded-xl bg-[#141e26] hover:bg-[#1b2934] border border-emerald-500/40 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                onClick={() => setShowIntakeModal(prev => !prev)}
+                className={`flex-1 py-2 px-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                  showIntakeModal
+                    ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300'
+                    : 'bg-[#141e26] hover:bg-[#1b2934] border-emerald-500/40 text-emerald-400'
+                }`}
               >
                 <FileText className="w-4 h-4 text-emerald-400" />
-                <span>Intake & Notes</span>
+                <span>{showIntakeModal ? 'Intake Active' : 'Intake & Notes'}</span>
               </button>
             </div>
           )}
-          </div>
         </div>
       </div>
+    </div>
+  );
+
+  // During active calls, when Intake Form is active, present split side-by-side full screen layout
+  if (isCallActive && showIntakeModal) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#06090e]/95 backdrop-blur-md p-4 sm:p-6 flex flex-col lg:flex-row items-stretch gap-4 sm:gap-6 overflow-hidden animate-in fade-in duration-200">
+        {/* Left Side: Intake Form (Full Screen Left) */}
+        <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
+          <CallIntakeFormModal
+            callSid={activeCall?.callSid || activeCall?.roomName || 'unknown'}
+            customerName={resolvedCustomerName}
+            phoneNumber={resolvedCustomerPhone}
+            leadId={activeCall?.leadId}
+            isOpen={true}
+            embedded={true}
+            onClose={() => setShowIntakeModal(false)}
+            onSuccess={() => setShowIntakeModal(false)}
+          />
+        </div>
+
+        {/* Right Side: Call Widget Modal (Full Screen Right) */}
+        <div className="w-full lg:w-[400px] xl:w-[440px] shrink-0 h-full flex flex-col items-center justify-center overflow-y-auto custom-scrollbar p-1">
+          {renderCallCard()}
+        </div>
+
+        {showTransferModal && (
+          <CallTransferModal
+            callSid={activeCall?.callSid || activeCall?.roomName || 'unknown'}
+            isOpen={showTransferModal}
+            onClose={() => setShowTransferModal(false)}
+            onSuccess={() => {
+              setShowTransferModal(false);
+              setActiveCall(null);
+              setStatus('AVAILABLE');
+            }}
+            callerName={resolvedCustomerName}
+            callerPhone={resolvedCustomerPhone}
+          />
+        )}
+
+        {showCustomerHistory && (
+          <CustomerHistoryDrawer
+            identifier={resolvedCustomerPhone || resolvedCustomerName || ''}
+            isOpen={showCustomerHistory}
+            onClose={() => setShowCustomerHistory(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {renderCallCard()}
 
       {showIntakeModal && (
         <CallIntakeFormModal
