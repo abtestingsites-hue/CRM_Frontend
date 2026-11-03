@@ -43,6 +43,7 @@ export interface CallIntakeFormModalProps {
   onClose: () => void;
   onSuccess?: (lead?: any) => void;
   embedded?: boolean;
+  isInlineWorkspace?: boolean;
 }
 
 const COUNTRY_CODES = [
@@ -104,6 +105,7 @@ export function CallIntakeFormModal({
   onClose,
   onSuccess,
   embedded = false,
+  isInlineWorkspace = false,
 }: CallIntakeFormModalProps) {
   // Service catalog state (Dynamically fetched from backend)
   const [catalogOrganizations, setCatalogOrganizations] = useState<Array<{ key: string; name: string; label: string }>>([]);
@@ -744,9 +746,11 @@ export function CallIntakeFormModal({
     }
   };
 
+  const isContainerEmbedded = Boolean(embedded || isInlineWorkspace);
+
   const innerContent = (
     <div className={`bg-[#0b1015] border border-[#1e2933] rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-200 text-xs ${
-      embedded ? 'w-full h-full' : 'w-full max-w-4xl max-h-[92vh] animate-in fade-in zoom-in-95 duration-200'
+      isContainerEmbedded ? 'w-full h-full' : 'w-full max-w-4xl max-h-[92vh] animate-in fade-in zoom-in-95 duration-200'
     }`}>
       {/* HEADER */}
       <div className="p-4 px-6 border-b border-[#1e2933] bg-[#0f171f] flex items-center justify-between shrink-0">
@@ -1677,16 +1681,9 @@ export function CallIntakeFormModal({
 
           <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={handleAttemptClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white bg-[#141b22] hover:bg-[#1a232c] text-xs font-semibold transition-colors"
-            >
-              Cancel
-            </button>
-            <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-orange-900/40 transition-all disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-orange-900/40 transition-all disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -1740,7 +1737,7 @@ export function CallIntakeFormModal({
     </div>
   );
 
-  if (embedded) {
+  if (isContainerEmbedded) {
     return innerContent;
   }
 

@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { SocketProvider } from "@/providers/SocketProvider";
 import { IncomingCallModal } from "@/components/call-center/IncomingCallModal";
 import { LiveCallPanel } from "@/components/call-center/LiveCallPanel";
+import { GlobalActiveCallWorkspace } from "@/components/call-center/GlobalActiveCallWorkspace";
 import { AgentSidebar } from "@/components/agent-layout/AgentSidebar";
 import { AgentNavbar } from "@/components/agent-layout/AgentNavbar";
 import { useAuthStore } from "@/store/authStore";
@@ -129,6 +130,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
       <IncomingCallModal />
       <LiveCallPanel />
+      <GlobalActiveCallWorkspace />
       <AdminTicketToast />
     </SocketProvider>
   );

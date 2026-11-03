@@ -8,13 +8,23 @@ import {
   RefreshCw, CheckCircle2, AlertTriangle, ArrowUpDown, 
   ChevronLeft, ChevronRight, Share2, Layers, Send, 
   MessageSquare, Mail, Building, Sparkles, Check, AlertCircle,
-  PhoneCall, CornerDownRight, Loader2, Volume2, ExternalLink
+  PhoneCall, CornerDownRight, Loader2, Volume2, ExternalLink,
+  MessageCircle
 } from 'lucide-react';
 import { api, apiFetch, sanitizeRecordingUrl } from '@/lib/api';
 import { useCallStore } from '@/store/useCallStore';
 import { CallHistoryDrawer } from '@/components/call-center/CallHistoryDrawer';
 import { CustomerHistoryDrawer } from '@/components/call-center/CustomerHistoryDrawer';
-import { CrossUnitTransferModal } from '@/components/call-center/CrossUnitTransferModal';
+import { OmnichannelComposerModal } from '@/components/call-center/OmnichannelComposerModal';
+import { SameUnitAgentReassignmentModal } from '@/components/call-center/SameUnitAgentReassignmentModal';
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
 
 function CallLogsContent() {
   const searchParams = useSearchParams();
@@ -73,8 +83,14 @@ function CallLogsContent() {
   const [selectedCustomerIdentifier, setSelectedCustomerIdentifier] = useState<string | null>(null);
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
 
-  const [leadForTransfer, setLeadForTransfer] = useState<{ id: string; name: string; unit: string } | null>(null);
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  // Omnichannel Composer state
+  const [selectedCallForComposer, setSelectedCallForComposer] = useState<any | null>(null);
+  const [composerInitialChannel, setComposerInitialChannel] = useState<string>('WHATSAPP');
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+
+  // Same-Unit Agent Reassignment state
+  const [leadForReassign, setLeadForReassign] = useState<{ id: string; name: string; unit: string } | null>(null);
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
 
   // Active call & Recall Telephony state
   const { activeCall, setActiveCall } = useCallStore();
@@ -213,8 +229,16 @@ function CallLogsContent() {
   // Handle Outbound Recall Call
   const handleRecall = async (call: any) => {
     if (recallingCallId || activeCall) return;
-    const phoneToCall = call.callerPhone;
-    if (!phoneToCall || phoneToCall === 'Unknown') {
+    const phoneToCall = 
+      (call.callerPhone && call.callerPhone !== 'Unknown' && call.callerPhone) ||
+      (call.customerPhone && call.customerPhone !== 'Unknown' && call.customerPhone) ||
+      (call.customerDetails?.phone && call.customerDetails.phone !== 'Unknown' && call.customerDetails.phone) ||
+      (call.callerNumber && call.callerNumber !== 'Unknown' && call.callerNumber) ||
+      (call.calledNumber && call.calledNumber !== 'Unknown' && call.calledNumber) ||
+      (call.customer?.phone && call.customer.phone !== 'Unknown' && call.customer.phone) ||
+      (call.lead?.phoneNumber && call.lead.phoneNumber !== 'Unknown' && call.lead.phoneNumber);
+
+    if (!phoneToCall) {
       setRecallFeedback(prev => ({ ...prev, [call.id]: 'No valid phone' }));
       return;
     }
@@ -223,7 +247,7 @@ function CallLogsContent() {
     setRecallFeedback(prev => ({ ...prev, [call.id]: '' }));
 
     // Normalize phone E.164
-    let clean = phoneToCall.replace(/[^\d+]/g, '');
+    let clean = String(phoneToCall).replace(/[^\d+]/g, '');
     if (!clean.startsWith('+')) {
       if (clean.length === 10) clean = '+91' + clean;
       else if (clean.length === 12 && clean.startsWith('91')) clean = '+' + clean;
@@ -809,8 +833,8 @@ function CallLogsContent() {
                     {/* 7. Recall */}
                     <th className="py-3 px-3 w-[100px] text-center">Recall</th>
                     {/* 8. Messaging Hub */}
-                    <th className="py-3 px-3 w-[100px] text-center">
-                      <div className="flex items-center justify-center gap-1">
+                    <th className="py-3 px-3 w-[170px] text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <span>Msg Hub</span>
                         <input
                           type="checkbox"
@@ -1031,51 +1055,126 @@ function CallLogsContent() {
 
                           {/* 7. Recall Column (Dedicated Outbound Calling) */}
                           <td className="py-3 px-3 w-[100px] text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRecall(call)}
-                              disabled={recallingCallId === call.id || Boolean(activeCall)}
-                              className={`px-2.5 py-1.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all shadow-sm ${
-                                recallingCallId === call.id
-                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
-                                  : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none'
-                              }`}
-                              title={activeCall ? 'A call is already active' : `Recall ${call.callerPhone}`}
-                            >
-                              {recallingCallId === call.id ? (
+                            {(() => {
+                              const resolvedPhone = 
+                                (call.callerPhone && call.callerPhone !== 'Unknown' && call.callerPhone) ||
+                                (call.customerPhone && call.customerPhone !== 'Unknown' && call.customerPhone) ||
+                                (call.customerDetails?.phone && call.customerDetails.phone !== 'Unknown' && call.customerDetails.phone) ||
+                                (call.callerNumber && call.callerNumber !== 'Unknown' && call.callerNumber) ||
+                                (call.calledNumber && call.calledNumber !== 'Unknown' && call.calledNumber) ||
+                                (call.customer?.phone && call.customer.phone !== 'Unknown' && call.customer.phone) ||
+                                (call.lead?.phoneNumber && call.lead.phoneNumber !== 'Unknown' && call.lead.phoneNumber);
+
+                              const canRecall = Boolean(resolvedPhone) && !Boolean(activeCall) && recallingCallId !== call.id;
+
+                              return (
                                 <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  <span>Dialing...</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRecall(call)}
+                                    disabled={!canRecall}
+                                    className={`px-2.5 py-1.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all shadow-sm ${
+                                      recallingCallId === call.id
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                                        : canRecall
+                                          ? 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 hover:scale-105 active:scale-95'
+                                          : 'bg-[#141414] text-slate-600 border border-[#222] cursor-not-allowed opacity-50'
+                                    }`}
+                                    title={
+                                      activeCall 
+                                        ? 'A call is already active' 
+                                        : resolvedPhone 
+                                          ? `Recall ${resolvedPhone}` 
+                                          : 'No valid phone number found'
+                                    }
+                                  >
+                                    {recallingCallId === call.id ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <span>Dialing...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <PhoneCall className="w-3.5 h-3.5" />
+                                        <span>Recall</span>
+                                      </>
+                                    )}
+                                  </button>
+                                  {recallFeedback[call.id] && (
+                                    <span className="text-[10px] block mt-1 text-rose-400 font-medium">
+                                      {recallFeedback[call.id]}
+                                    </span>
+                                  )}
                                 </>
-                              ) : (
-                                <>
-                                  <PhoneCall className="w-3.5 h-3.5" />
-                                  <span>Recall</span>
-                                </>
-                              )}
-                            </button>
-                            {recallFeedback[call.id] && (
-                              <span className="text-[10px] block mt-1 text-rose-400 font-medium">
-                                {recallFeedback[call.id]}
-                              </span>
-                            )}
+                              );
+                            })()}
                           </td>
 
-                          {/* 8. Messaging Hub Column (ONLY Messaging Hub Icon + Checkbox) */}
-                          <td className="py-3 px-3 w-[100px] text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <div className={`p-1.5 rounded-lg border transition-colors ${
-                                selectedMessagingHubCallIds.has(call.id)
-                                  ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
-                                  : 'bg-[#141414] border-[#262626] text-slate-500'
-                              }`}>
+                          {/* 8. Messaging Hub Column (Platform Logos + Checkbox) */}
+                          <td className="py-3 px-3 w-[170px] text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {/* WhatsApp */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCallForComposer(call);
+                                  setComposerInitialChannel('WHATSAPP');
+                                  setIsComposerOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-[#25D366]/20 border border-[#262626] hover:border-[#25D366]/50 text-[#25D366] transition-all hover:scale-110 active:scale-95"
+                                title="Send WhatsApp message"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* SMS */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCallForComposer(call);
+                                  setComposerInitialChannel('SMS');
+                                  setIsComposerOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-purple-500/20 border border-[#262626] hover:border-purple-500/50 text-purple-400 transition-all hover:scale-110 active:scale-95"
+                                title="Send SMS"
+                              >
                                 <MessageSquare className="w-3.5 h-3.5" />
-                              </div>
+                              </button>
+
+                              {/* Email */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCallForComposer(call);
+                                  setComposerInitialChannel('EMAIL');
+                                  setIsComposerOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-orange-500/20 border border-[#262626] hover:border-orange-500/50 text-orange-400 transition-all hover:scale-110 active:scale-95"
+                                title="Send Email"
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Instagram */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCallForComposer(call);
+                                  setComposerInitialChannel('INSTAGRAM');
+                                  setIsComposerOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-[#141414] hover:bg-[#E4405F]/20 border border-[#262626] hover:border-[#E4405F]/50 text-[#E4405F] transition-all hover:scale-110 active:scale-95"
+                                title="Send Instagram message"
+                              >
+                                <InstagramIcon className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Checkbox for Bulk Selection */}
                               <input
                                 type="checkbox"
                                 checked={selectedMessagingHubCallIds.has(call.id)}
                                 onChange={() => toggleMessagingHubSelection(call.id)}
-                                className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
+                                className="w-3.5 h-3.5 ml-1 rounded border-slate-700 bg-slate-900 text-orange-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-orange-500"
                                 title="Mark for Messaging Hub follow-up"
                               />
                             </div>
@@ -1086,15 +1185,15 @@ function CallLogsContent() {
                             <button
                               type="button"
                               onClick={() => {
-                                setLeadForTransfer({
+                                setLeadForReassign({
                                   id: call.leadId || call.id,
                                   name: call.callerName || 'Lead Record',
                                   unit: call.department || 'UEC',
                                 });
-                                setIsTransferModalOpen(true);
+                                setIsReassignModalOpen(true);
                               }}
                               className="px-2.5 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-semibold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all hover:scale-105 active:scale-95"
-                              title="Transfer lead to another agent or unit"
+                              title="Transfer lead to an agent in the same unit"
                             >
                               <Share2 className="w-3.5 h-3.5" />
                               <span>Transfer</span>
@@ -1186,22 +1285,38 @@ function CallLogsContent() {
         }}
       />
 
-      {/* Cross-Unit Lead Transfer Modal */}
-      {isTransferModalOpen && leadForTransfer && (
-        <CrossUnitTransferModal
-          leadId={leadForTransfer.id}
-          isOpen={isTransferModalOpen}
+      {/* Omnichannel Composer Modal */}
+      {isComposerOpen && selectedCallForComposer && (
+        <OmnichannelComposerModal
+          isOpen={isComposerOpen}
           onClose={() => {
-            setIsTransferModalOpen(false);
-            setLeadForTransfer(null);
+            setIsComposerOpen(false);
+            setSelectedCallForComposer(null);
           }}
-          onSuccess={() => {
-            setIsTransferModalOpen(false);
-            setLeadForTransfer(null);
+          call={selectedCallForComposer}
+          initialChannel={composerInitialChannel}
+          onMessageSent={() => {
             loadCalls();
           }}
-          leadName={leadForTransfer.name}
-          currentUnitName={leadForTransfer.unit}
+        />
+      )}
+
+      {/* Same-Unit Agent Reassignment Modal */}
+      {isReassignModalOpen && leadForReassign && (
+        <SameUnitAgentReassignmentModal
+          leadId={leadForReassign.id}
+          isOpen={isReassignModalOpen}
+          onClose={() => {
+            setIsReassignModalOpen(false);
+            setLeadForReassign(null);
+          }}
+          onSuccess={() => {
+            setIsReassignModalOpen(false);
+            setLeadForReassign(null);
+            loadCalls();
+          }}
+          leadName={leadForReassign.name}
+          currentUnitName={leadForReassign.unit}
         />
       )}
     </div>
