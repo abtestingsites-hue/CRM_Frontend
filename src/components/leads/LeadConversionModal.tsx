@@ -148,12 +148,9 @@ export function LeadConversionModal({ leadId, onClose, onSubmit }: LeadConversio
               </div>
 
               <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl font-medium text-slate-400 hover:text-white transition-colors">
-                  Skip
-                </button>
-                <button type="submit" disabled={isSubmitting || !notes.trim() || !sentiment} className={`px-6 py-2 rounded-xl font-bold transition-colors flex items-center gap-2 ${(!notes.trim() || !sentiment) ? 'bg-[#222] text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20'}`}>
+                <button type="submit" disabled={isSubmitting || !notes.trim() || !sentiment} className={`w-full py-2.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${(!notes.trim() || !sentiment) ? 'bg-[#222] text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20'}`}>
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSubmitting ? 'Saving...' : 'Continue'}
+                  {isSubmitting ? 'Saving Interaction Notes...' : 'Save & Continue'}
                 </button>
               </div>
             </form>

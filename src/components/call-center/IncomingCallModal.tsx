@@ -308,13 +308,19 @@ export const IncomingCallModal = () => {
                   </p>
                   {lookupResult?.matches && lookupResult.matches.length > 0 && (
                     <div className="space-y-1 pt-1 max-h-24 overflow-y-auto custom-scrollbar">
-                      {lookupResult.matches.map((m: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between text-[10px] bg-black/20 px-2 py-1 rounded">
-                          <span className="font-bold text-blue-400">[{m.unit || 'Unit'}]</span>
-                          <span className="text-slate-300 truncate max-w-[150px]">{m.name || m.title || 'Record'}</span>
-                          <span className="text-slate-500 uppercase">{m.type || 'Contact'}</span>
-                        </div>
-                      ))}
+                      {lookupResult.matches.map((m: any, idx: number) => {
+                        const unitCode = typeof m.unit === 'object' && m.unit !== null
+                          ? (m.unit.code || m.unit.name || 'Unit')
+                          : (m.unit || 'Unit');
+                        const recordType = m.recordType || m.type || 'Contact';
+                        return (
+                          <div key={idx} className="flex items-center justify-between text-[10px] bg-black/20 px-2 py-1 rounded">
+                            <span className="font-bold text-blue-400">[{unitCode}]</span>
+                            <span className="text-slate-300 truncate max-w-[150px]">{m.name || m.title || 'Record'}</span>
+                            <span className="text-slate-500 uppercase">{recordType}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
