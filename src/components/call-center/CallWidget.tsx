@@ -123,7 +123,7 @@ function LiveKitManager({ setCallState, setWebrtcConnected, callSid, isMuted, is
         logEvent('connected');
         hasEverConnectedRef.current = true;
         if (typeof (room as any).startAudio === 'function') {
-          (room as any).startAudio().catch(() => {});
+          (room as any).startAudio().catch(() => { });
         }
       },
       disconnected: (reason: any) => {
@@ -201,9 +201,9 @@ function LiveKitManager({ setCallState, setWebrtcConnected, callSid, isMuted, is
     if (!room || state !== 'connected') return;
 
     const hasRemote = remoteParticipants.length > 0;
-    const hasActiveSip = remoteParticipants.some(p => 
-      p.attributes?.['sip.callStatus'] === 'active' || 
-      p.isSpeaking || 
+    const hasActiveSip = remoteParticipants.some(p =>
+      p.attributes?.['sip.callStatus'] === 'active' ||
+      p.isSpeaking ||
       p.getTrackPublications().length > 0
     );
 
@@ -277,7 +277,7 @@ function LiveKitManager({ setCallState, setWebrtcConnected, callSid, isMuted, is
       if (track.kind === 'audio') {
         console.log(`[CALL-LIFECYCLE-DIAG] callId=${callSid} stage=AUDIO_CONNECTED source=trackSubscribed timestamp=${new Date().toISOString()} participant=${participant.identity} trackSid=${track.sid}`);
         if (typeof (room as any).startAudio === 'function') {
-          (room as any).startAudio().catch(() => {});
+          (room as any).startAudio().catch(() => { });
         }
         // Note: RoomAudioRenderer handles declarative audio element rendering and volume/mute
       }
@@ -294,16 +294,16 @@ function LiveKitManager({ setCallState, setWebrtcConnected, callSid, isMuted, is
 }
 
 
-function CallControlsInner({ 
-  duration, 
-  endCall, 
+function CallControlsInner({
+  duration,
+  endCall,
   connectionState,
   isSpeaker,
   toggleSpeaker,
   onTransferClick,
-}: { 
-  duration: number; 
-  endCall: () => void; 
+}: {
+  duration: number;
+  endCall: () => void;
   connectionState: string;
   isSpeaker: boolean;
   toggleSpeaker: () => void;
@@ -314,48 +314,45 @@ function CallControlsInner({
   return (
     <div className="flex flex-col items-center">
       <div className="flex justify-center gap-4 mt-6">
-        <button 
+        <button
           onClick={toggleMute}
           aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
           disabled={connectionState !== 'CONNECTED'}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-            connectionState !== 'CONNECTED' ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50' :
-            isMuted ? 'bg-white text-black hover:bg-slate-200' : 'bg-[#222] text-white hover:bg-[#333] border border-[#333]'
-          }`}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${connectionState !== 'CONNECTED' ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50' :
+              isMuted ? 'bg-white text-black hover:bg-slate-200' : 'bg-[#222] text-white hover:bg-[#333] border border-[#333]'
+            }`}
           title="Mute"
         >
           {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
         </button>
-        
-        <button 
+
+        <button
           onClick={toggleSpeaker}
           aria-label={isSpeaker ? 'Disable speaker' : 'Enable speaker'}
           disabled={connectionState !== 'CONNECTED' && connectionState !== 'RINGING'}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-            connectionState !== 'CONNECTED' && connectionState !== 'RINGING' ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50' :
-            !isSpeaker ? 'bg-white text-black hover:bg-slate-200' : 'bg-[#222] text-white hover:bg-[#333] border border-[#333]'
-          }`}
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${connectionState !== 'CONNECTED' && connectionState !== 'RINGING' ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50' :
+              !isSpeaker ? 'bg-white text-black hover:bg-slate-200' : 'bg-[#222] text-white hover:bg-[#333] border border-[#333]'
+            }`}
           title="Speaker"
         >
           {isSpeaker ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
         </button>
 
         {/* Live Call Transfer Button */}
-        <button 
+        <button
           onClick={onTransferClick}
           aria-label="Transfer Call"
           disabled={connectionState !== 'CONNECTED'}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-            connectionState !== 'CONNECTED' 
-              ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50' 
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${connectionState !== 'CONNECTED'
+              ? 'bg-[#111] text-slate-600 cursor-not-allowed opacity-50'
               : 'bg-[#1a232a] text-cyan-400 hover:bg-[#20303a] border border-cyan-500/40 hover:border-cyan-400 shadow-md shadow-cyan-500/10'
-          }`}
+            }`}
           title="Transfer Call to Department or Agent"
         >
           <PhoneForwarded className="w-5 h-5" />
         </button>
 
-        <button 
+        <button
           onClick={endCall}
           aria-label="End call"
           className="w-16 h-16 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/20 transition-transform active:scale-95 border-2 border-rose-400"
@@ -497,8 +494,8 @@ function PostCallIntelligenceCard({
             {customerName && customerName !== 'Unknown' && customerName !== 'Customer'
               ? customerName
               : phoneNumber && phoneNumber !== 'Voice Line' && phoneNumber !== 'Unknown'
-              ? phoneNumber
-              : 'Customer'}
+                ? phoneNumber
+                : 'Customer'}
           </span>
           <span className="text-xs text-slate-400 font-mono block">{phoneNumber || 'Voice Line'}</span>
         </div>
@@ -527,11 +524,10 @@ function PostCallIntelligenceCard({
             <Volume2 className="w-3.5 h-3.5 text-blue-400" />
             Audio Recording
           </span>
-          <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-            recordingStatus === 'READY' ? 'bg-emerald-500/20 text-emerald-400' :
-            recordingStatus === 'PROCESSING' || recordingStatus === 'PENDING' ? 'bg-amber-500/20 text-amber-300 animate-pulse' :
-            'bg-slate-800 text-slate-400'
-          }`}>
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${recordingStatus === 'READY' ? 'bg-emerald-500/20 text-emerald-400' :
+              recordingStatus === 'PROCESSING' || recordingStatus === 'PENDING' ? 'bg-amber-500/20 text-amber-300 animate-pulse' :
+                'bg-slate-800 text-slate-400'
+            }`}>
             {recordingStatus === 'READY' ? 'Ready' : recordingStatus === 'PROCESSING' ? 'Processing' : recordingStatus}
           </span>
         </div>
@@ -603,11 +599,10 @@ function PostCallIntelligenceCard({
             AI Intelligence Summary
           </span>
           {aiSummary?.sentiment && (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-              aiSummary.sentiment === 'Positive' ? 'bg-emerald-500/20 text-emerald-400' :
-              aiSummary.sentiment === 'Negative' ? 'bg-rose-500/20 text-rose-400' :
-              'bg-slate-800 text-slate-400'
-            }`}>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${aiSummary.sentiment === 'Positive' ? 'bg-emerald-500/20 text-emerald-400' :
+                aiSummary.sentiment === 'Negative' ? 'bg-rose-500/20 text-rose-400' :
+                  'bg-slate-800 text-slate-400'
+              }`}>
               {aiSummary.sentiment} ({aiSummary.sentimentScore || 5}/10)
             </span>
           )}
@@ -685,7 +680,7 @@ export function CallWidget() {
   const handleRoomReady = React.useCallback((r: any) => {
     roomContextRef.current = r;
   }, []);
-  
+
   const callState = activeCall?.status || 'IDLE';
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -703,9 +698,9 @@ export function CallWidget() {
     direction?: string;
     duration?: number;
   } | null>(null);
-  
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Prevent duplicate endCall requests
   const endCallRequestedRef = useRef(false);
 
@@ -768,7 +763,7 @@ export function CallWidget() {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [resolvedCustomerPhone, activeCall?.phone]);
 
@@ -779,7 +774,7 @@ export function CallWidget() {
 
     // Avoid opening intake modal for internal directory calls
     const isInternal = Boolean(
-      activeCall?.isInternal || 
+      activeCall?.isInternal ||
       activeCall?.callCategory === 'INTERNAL' ||
       activeCall?.type === 'INTERNAL' ||
       (activeCall?.phone && activeCall.phone.toLowerCase() === 'internal') ||
@@ -833,7 +828,7 @@ export function CallWidget() {
         callId: activeCall?.callSid
       });
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync initial call state when activeCall changes
@@ -873,7 +868,7 @@ export function CallWidget() {
   // Use Mediasoup via custom hook when call is accepted (and not LiveKit)
   const { isMuted } = useCallStore();
   const { micState } = useMediasoup(
-    (activeCall?.accepted && !isLiveKit) ? mediaSocket : null, 
+    (activeCall?.accepted && !isLiveKit) ? mediaSocket : null,
     activeCall?.callSid,
     isMuted,
     isSpeaker
@@ -903,7 +898,7 @@ export function CallWidget() {
     // updateActiveCallStatus('ENDED') is already handled by SocketProvider or endCall()
     setWebrtcConnected(false);
     setStatus('AVAILABLE');
-    
+
     // Release pre-warmed microphone stream to turn off the hardware
     if ((window as any)._prewarmedAudioStream) {
       (window as any)._prewarmedAudioStream.getTracks().forEach((track: any) => track.stop());
@@ -924,7 +919,7 @@ export function CallWidget() {
         }));
         return;
       }
-      
+
       endCallRequestedRef.current = true;
       console.log('[END-CALL-FLOW]', JSON.stringify({
         callId: activeCall.callSid,
@@ -949,7 +944,7 @@ export function CallWidget() {
           reason: 'explicit_user_end'
         });
       } else if (telephonySocket) {
-        telephonySocket.emit('endCall', { 
+        telephonySocket.emit('endCall', {
           callSid: activeCall.callSid,
           roomName: activeCall.roomName,
           isCaller: activeCall.isCaller,
@@ -959,7 +954,7 @@ export function CallWidget() {
           reason: 'explicit_user_end'
         });
       }
-      
+
       console.log('[CALL-LIFECYCLE]', JSON.stringify({
         event: 'explicit_user_end',
         sessionID: activeCall.callSid,
@@ -974,7 +969,7 @@ export function CallWidget() {
   const handleFeedbackComplete = (endedCallSid?: string) => {
     setShowFeedbackModal(false);
     setShowConversionModal(false);
-    
+
     const currentCall = useCallStore.getState().activeCall;
     if (!currentCall || currentCall.callSid === endedCallSid) {
       setActiveCall(null);
@@ -986,7 +981,7 @@ export function CallWidget() {
     return (
       <div className="text-center w-full max-w-md">
         <div className="w-24 h-24 bg-[#111] rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner shadow-black/50 border border-[#222]">
-           <Phone className="w-10 h-10 text-slate-700" />
+          <Phone className="w-10 h-10 text-slate-700" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Ready for Calls</h2>
         <p className="text-slate-500 mb-8 text-sm">Select an agent or wait for incoming calls.</p>
@@ -1026,18 +1021,18 @@ export function CallWidget() {
         />
 
         {showFeedbackModal && (
-          <PostCallFeedbackModal 
-            callSid={activeCall.callSid || 'unknown'} 
-            onClose={() => handleFeedbackComplete(activeCall.callSid)} 
-            onSubmit={() => handleFeedbackComplete(activeCall.callSid)} 
+          <PostCallFeedbackModal
+            callSid={activeCall.callSid || 'unknown'}
+            onClose={() => handleFeedbackComplete(activeCall.callSid)}
+            onSubmit={() => handleFeedbackComplete(activeCall.callSid)}
           />
         )}
 
         {showConversionModal && (
-          <LeadConversionModal 
-            leadId={activeCall.leadId || ''} 
-            onClose={() => handleFeedbackComplete(activeCall.callSid)} 
-            onSubmit={() => handleFeedbackComplete(activeCall.callSid)} 
+          <LeadConversionModal
+            leadId={activeCall.leadId || ''}
+            onClose={() => handleFeedbackComplete(activeCall.callSid)}
+            onSubmit={() => handleFeedbackComplete(activeCall.callSid)}
           />
         )}
 
@@ -1071,32 +1066,30 @@ export function CallWidget() {
     const displayName = resolvedCustomerName && resolvedCustomerName !== 'Customer'
       ? resolvedCustomerName
       : customerData?.name ||
-        (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
-        persistedSession?.customerName ||
-        resolvedCustomerPhone ||
-        persistedSession?.phone ||
-        'Customer';
+      (activeCall?.customerName && activeCall.customerName !== 'Customer' ? activeCall.customerName : null) ||
+      persistedSession?.customerName ||
+      resolvedCustomerPhone ||
+      persistedSession?.phone ||
+      'Customer';
     const displayPhone = resolvedCustomerPhone || customerData?.phone || activeCall?.phone || persistedSession?.phone || 'VoIP WebRTC Link';
     const displayDuration = duration || persistedSession?.duration || 0;
 
     return (
       <div className="w-full max-w-sm bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#222] rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         {/* Background Glow Effect */}
-        <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${
-          callState === 'CONNECTED' ? 'bg-emerald-500' : 
-          callState === 'RINGING' ? 'bg-primary' : 
-          isDisconnectedOrEnded ? 'bg-rose-500' : 'bg-blue-500'
-        }`}></div>
+        <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-1000 ${callState === 'CONNECTED' ? 'bg-emerald-500' :
+            callState === 'RINGING' ? 'bg-primary' :
+              isDisconnectedOrEnded ? 'bg-rose-500' : 'bg-blue-500'
+          }`}></div>
 
         <div className="relative z-10">
           {/* Header Status */}
           <div className="flex justify-between items-center mb-8">
-            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${
-              callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
-              callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' : 
-              isDisconnectedOrEnded ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 
-              'bg-blue-500/10 text-blue-500 border border-blue-500/20'
-            }`}>
+            <span className={`text-xs font-bold tracking-wider px-3 py-1 rounded-full uppercase flex items-center gap-2 ${callState === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                callState === 'RINGING' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' :
+                  isDisconnectedOrEnded ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' :
+                    'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+              }`}>
               {callState === 'CONNECTED' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
               {isDisconnectedOrEnded ? 'CALL DISCONNECTED / WRAP-UP' : callState}
             </span>
@@ -1109,15 +1102,14 @@ export function CallWidget() {
           {/* Profile / Caller Info */}
           <div className="flex flex-col items-center justify-center mb-6">
             <div className="relative mb-4">
-              <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${
-                callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' : 
-                callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' : 
-                isDisconnectedOrEnded ? 'border-rose-500/30 bg-[#111] text-rose-400 shadow-rose-900/20' :
-                'border-[#333] bg-[#111] text-white shadow-black'
-              }`}>
+              <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold border-4 shadow-lg transition-all duration-500 ${callState === 'CONNECTED' ? 'border-emerald-500/50 bg-[#111] text-emerald-400 shadow-emerald-500/20' :
+                  callState === 'RINGING' ? 'border-primary/50 bg-[#111] text-primary shadow-primary/20 animate-bounce' :
+                    isDisconnectedOrEnded ? 'border-rose-500/30 bg-[#111] text-rose-400 shadow-rose-900/20' :
+                      'border-[#333] bg-[#111] text-white shadow-black'
+                }`}>
                 {(displayName || 'C').substring(0, 1).toUpperCase()}
               </div>
-              
+
               {/* Recording Indicator */}
               {callState === 'CONNECTED' && (
                 <div className="absolute -bottom-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-rose-400 shadow-lg animate-pulse">
@@ -1125,7 +1117,7 @@ export function CallWidget() {
                 </div>
               )}
             </div>
-            
+
             <h2 className="text-2xl font-bold text-white mb-1 truncate w-full text-center">
               {displayName}
             </h2>
@@ -1133,7 +1125,7 @@ export function CallWidget() {
               {callState === 'CONNECTING' && <Loader2 className="w-3 h-3 animate-spin" />}
               {displayPhone}
             </p>
-            
+
             {/* LiveKit Connection for Active Calls */}
             {isCallActive && activeCall?.accepted && isLiveKit && (
               <div className="mt-4 w-full">
@@ -1162,9 +1154,9 @@ export function CallWidget() {
                   video={false}
                 >
                   <RoomAudioRenderer volume={isSpeaker ? 1 : 0} muted={!isSpeaker} />
-                  <LiveKitManager 
-                    setCallState={updateActiveCallStatus} 
-                    setWebrtcConnected={setWebrtcConnected} 
+                  <LiveKitManager
+                    setCallState={updateActiveCallStatus}
+                    setWebrtcConnected={setWebrtcConnected}
                     callSid={activeCall.callSid}
                     isMuted={isMuted}
                     isSpeaker={isSpeaker}
@@ -1174,8 +1166,8 @@ export function CallWidget() {
                     onRoomReady={handleRoomReady}
                   />
                 </LiveKitRoom>
-                <CallControlsInner 
-                  duration={duration} 
+                <CallControlsInner
+                  duration={duration}
                   endCall={endCall}
                   connectionState={callState}
                   isSpeaker={isSpeaker}
@@ -1188,8 +1180,8 @@ export function CallWidget() {
             {/* Mediasoup Connection State for Active Calls */}
             {isCallActive && activeCall?.accepted && !isLiveKit && (
               <div className="mt-4 w-full">
-                <CallControlsInner 
-                  duration={duration} 
+                <CallControlsInner
+                  duration={duration}
                   endCall={endCall}
                   connectionState={callState}
                   isSpeaker={isSpeaker}
@@ -1227,11 +1219,10 @@ export function CallWidget() {
               <button
                 type="button"
                 onClick={() => setShowIntakeModal(prev => !prev)}
-                className={`flex-1 py-2 px-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                  showIntakeModal
+                className={`flex-1 py-2 px-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 ${showIntakeModal
                     ? 'bg-emerald-600/30 border-emerald-400 text-emerald-300'
                     : 'bg-[#141e26] hover:bg-[#1b2934] border-emerald-500/40 text-emerald-400'
-                }`}
+                  }`}
               >
                 <FileText className="w-4 h-4 text-emerald-400" />
                 <span>{showIntakeModal ? 'Intake Active' : 'Intake & Notes'}</span>
@@ -1327,18 +1318,18 @@ export function CallWidget() {
       )}
 
       {showFeedbackModal && (
-        <PostCallFeedbackModal 
-          callSid={activeCall?.callSid || 'unknown'} 
-          onClose={handleFeedbackComplete} 
-          onSubmit={handleFeedbackComplete} 
+        <PostCallFeedbackModal
+          callSid={activeCall?.callSid || 'unknown'}
+          onClose={handleFeedbackComplete}
+          onSubmit={handleFeedbackComplete}
         />
       )}
 
       {showConversionModal && (
-        <LeadConversionModal 
-          leadId={activeCall?.leadId || ''} 
-          onClose={handleFeedbackComplete} 
-          onSubmit={handleFeedbackComplete} 
+        <LeadConversionModal
+          leadId={activeCall?.leadId || ''}
+          onClose={handleFeedbackComplete}
+          onSubmit={handleFeedbackComplete}
         />
       )}
 
