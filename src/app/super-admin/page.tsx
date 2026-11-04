@@ -30,9 +30,16 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
 import { IntegrationConfigModal } from '@/components/super-admin/IntegrationConfigModal';
+import { UnitSwitcher } from '@/components/super-admin/UnitSwitcher';
 
 export default function SuperAdminConsolePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'database' | 'integrations' | 'units' | 'transfers' | 'audit'>('overview');
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('crm_superadmin_selected_unit') || null;
+    }
+    return null;
+  });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -104,15 +111,18 @@ export default function SuperAdminConsolePage() {
     };
   };
 
-  // 2. Fetch data based on active tab
-  const fetchAllData = async () => {
+  // 2. Fetch data with dynamic unit scoping
+  const fetchAllData = async (unitIdOverride?: string | null) => {
     setIsRefreshing(true);
     try {
       const headers = getHeaders();
+      const unitParam = unitIdOverride !== undefined ? unitIdOverride : selectedUnitId;
+      const unitQuery = unitParam ? `?unitId=${encodeURIComponent(unitParam)}` : '';
+
       const [overRes, dbRes, intRes, unitRes, auditRes] = await Promise.all([
-        apiFetch('/api/v1/super-admin/overview', { headers }).then((r) => (r.ok ? r.json() : null)),
+        apiFetch(`/api/v1/super-admin/overview${unitQuery}`, { headers }).then((r) => (r.ok ? r.json() : null)),
         apiFetch('/api/v1/super-admin/database-health', { headers }).then((r) => (r.ok ? r.json() : null)),
-        apiFetch('/api/v1/super-admin/integrations', { headers }).then((r) => (r.ok ? r.json() : [])),
+        apiFetch(`/api/v1/super-admin/integrations${unitQuery}`, { headers }).then((r) => (r.ok ? r.json() : [])),
         apiFetch('/api/v1/super-admin/units', { headers }).then((r) => (r.ok ? r.json() : [])),
         apiFetch('/api/v1/super-admin/audit-logs', { headers }).then((r) => (r.ok ? r.json() : [])),
       ]);
@@ -127,6 +137,18 @@ export default function SuperAdminConsolePage() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleSelectUnit = (unitId: string | null) => {
+    setSelectedUnitId(unitId);
+    if (typeof window !== 'undefined') {
+      if (unitId) {
+        localStorage.setItem('crm_superadmin_selected_unit', unitId);
+      } else {
+        localStorage.removeItem('crm_superadmin_selected_unit');
+      }
+    }
+    fetchAllData(unitId);
   };
 
   useEffect(() => {
@@ -380,8 +402,14 @@ export default function SuperAdminConsolePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <UnitSwitcher
+            units={units}
+            selectedUnitId={selectedUnitId}
+            onSelectUnit={handleSelectUnit}
+            isLoading={isRefreshing}
+          />
           <button
-            onClick={fetchAllData}
+            onClick={() => fetchAllData()}
             disabled={isRefreshing}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#111] hover:bg-[#1a1a1a] border border-[#282828] text-xs text-slate-300 transition-colors"
           >
@@ -653,11 +681,15 @@ export default function SuperAdminConsolePage() {
                       </div>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                          item.status === 'HEALTHY'
+                          item.status === 'GLOBAL DEFAULT'
+                            ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                            : item.status === 'UNIT OVERRIDE'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                            : item.status === 'HEALTHY'
                             ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
                             : item.status === 'CONFIGURED'
                             ? 'bg-cyan-950/40 text-cyan-400 border-cyan-500/30'
-                            : 'bg-rose-950/40 text-rose-400 border-rose-500/30'
+                            : 'bg-slate-800 text-slate-400 border-slate-700'
                         }`}
                       >
                         {item.status}

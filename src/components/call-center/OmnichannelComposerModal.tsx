@@ -74,11 +74,15 @@ export function OmnichannelComposerModal({
     if (convId) {
       setIsLoadingHistory(true);
       api
-        .get(`/conversations/${encodeURIComponent(convId)}/messages`)
+        .get(`/api/v1/conversations/${encodeURIComponent(convId)}/messages`)
         .then((res: any) => {
           if (Array.isArray(res)) setConversationHistory(res);
+          else if (res && Array.isArray(res.messages)) setConversationHistory(res.messages);
         })
-        .catch(() => {})
+        .catch(() => {
+          // Gracefully fallback to empty history if conversation record not yet created
+          setConversationHistory([]);
+        })
         .finally(() => setIsLoadingHistory(false));
     }
   }, [isOpen, call, initialChannel]);
