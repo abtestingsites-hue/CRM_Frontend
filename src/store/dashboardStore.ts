@@ -69,12 +69,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       }
 
       const { activeType, startDate, endDate, department, team, agentId } = get();
+      const selectedUnitId = typeof window !== 'undefined' ? localStorage.getItem('crm_global_selected_unit') : null;
       let url = `${API_BASE_URL}/dashboard/analytics?type=${activeType}`;
       if (startDate) url += `&startDate=${startDate}T00:00:00Z`;
       if (endDate) url += `&endDate=${endDate}T23:59:59Z`;
       if (department && department !== 'All') url += `&department=${department}`;
       if (team && team !== 'All') url += `&team=${team}`;
       if (agentId && agentId !== 'All') url += `&agentId=${agentId}`;
+      if (selectedUnitId && selectedUnitId !== 'ALL') url += `&unitId=${encodeURIComponent(selectedUnitId)}`;
 
       const res = await apiFetch(url);
 
@@ -102,3 +104,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     set({ customWidgets: DEFAULT_CUSTOM_WIDGETS });
   },
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('crm-unit-changed', () => {
+    useDashboardStore.getState().fetchMetrics();
+  });
+}

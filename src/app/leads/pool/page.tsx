@@ -46,7 +46,13 @@ export default function LeadPoolPage() {
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [orgFilter, setOrgFilter] = useState('ALL');
+  const [orgFilter, setOrgFilter] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('crm_global_selected_unit');
+      return (saved && saved !== 'ALL') ? saved : 'ALL';
+    }
+    return 'ALL';
+  });
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [agentFilter, setAgentFilter] = useState('ALL');

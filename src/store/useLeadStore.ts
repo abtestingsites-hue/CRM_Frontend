@@ -89,8 +89,13 @@ export const useLeadStore = create<LeadStore>((set, get) => ({
   fetchLeads: async (token, query = '') => {
     set({ isLoading: true });
     try {
+      const selectedUnitId = typeof window !== 'undefined' ? localStorage.getItem('crm_global_selected_unit') : null;
+      let scopedQuery = query;
+      if (selectedUnitId && selectedUnitId !== 'ALL' && !scopedQuery.includes('unitId=') && !scopedQuery.includes('organization=')) {
+        scopedQuery += (scopedQuery.includes('?') ? '&' : '?') + `unitId=${encodeURIComponent(selectedUnitId)}`;
+      }
       const activeToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('paramantra_access_token') : '') || '';
-      const res = await apiFetch(`${API_URL}/api/v1/leads${query}`, {
+      const res = await apiFetch(`${API_URL}/api/v1/leads${scopedQuery}`, {
         headers: {
           'Authorization': `Bearer ${activeToken}`
         }
@@ -207,3 +212,9 @@ export const useLeadStore = create<LeadStore>((set, get) => ({
     }
   }
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('crm-unit-changed', () => {
+    useLeadStore.getState().fetchLeads('');
+  });
+}

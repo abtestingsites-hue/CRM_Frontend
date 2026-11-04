@@ -61,7 +61,13 @@ function CallLogsContent() {
   const [selectedDirection, setSelectedDirection] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedAgent, setSelectedAgent] = useState('');
-  const [selectedFoundation, setSelectedFoundation] = useState('');
+  const [selectedFoundation, setSelectedFoundation] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('crm_global_selected_unit');
+      return (saved && saved !== 'ALL') ? saved : '';
+    }
+    return '';
+  });
   const [selectedService, setSelectedService] = useState('');
   const [recordingOnly, setRecordingOnly] = useState('');
   const [transferOnly, setTransferOnly] = useState(initialTransfer);
@@ -142,6 +148,10 @@ function CallLogsContent() {
       if (selectedDepartment) params.set('department', selectedDepartment);
       if (selectedAgent) params.set('agentId', selectedAgent);
       if (selectedFoundation) params.set('foundation', selectedFoundation);
+      const globalUnit = typeof window !== 'undefined' ? localStorage.getItem('crm_global_selected_unit') : null;
+      if (globalUnit && globalUnit !== 'ALL' && !params.has('unitId')) {
+        params.set('unitId', globalUnit);
+      }
       if (selectedService) params.set('service', selectedService);
       if (recordingOnly) params.set('recordingAvailable', recordingOnly);
       if (transferOnly) params.set('transferStatus', transferOnly);
@@ -175,6 +185,23 @@ function CallLogsContent() {
     selectedDepartment, selectedAgent, selectedFoundation, selectedService, 
     recordingOnly, transferOnly
   ]);
+
+  useEffect(() => {
+    const handleUnitChanged = (e: any) => {
+      const unit = e.detail?.unit;
+      const unitCode = unit?.code || (e.detail?.unitId && e.detail.unitId !== 'ALL' ? e.detail.unitId : '');
+      setSelectedFoundation(unitCode || '');
+      setPage(1);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('crm-unit-changed', handleUnitChanged);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('crm-unit-changed', handleUnitChanged);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     loadCalls();

@@ -31,12 +31,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
 import { IntegrationConfigModal } from '@/components/super-admin/IntegrationConfigModal';
 import { UnitSwitcher } from '@/components/super-admin/UnitSwitcher';
+import { useUnitStore } from '@/store/useUnitStore';
 
 export default function SuperAdminConsolePage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'database' | 'integrations' | 'units' | 'transfers' | 'audit'>('overview');
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('crm_superadmin_selected_unit') || null;
+      return localStorage.getItem('crm_global_selected_unit') || localStorage.getItem('crm_superadmin_selected_unit') || null;
     }
     return null;
   });
@@ -141,6 +142,7 @@ export default function SuperAdminConsolePage() {
 
   const handleSelectUnit = (unitId: string | null) => {
     setSelectedUnitId(unitId);
+    useUnitStore.getState().setSelectedUnitId(unitId);
     if (typeof window !== 'undefined') {
       if (unitId) {
         localStorage.setItem('crm_superadmin_selected_unit', unitId);
@@ -155,6 +157,19 @@ export default function SuperAdminConsolePage() {
     if (isSuperAdmin) {
       fetchAllData();
     }
+    const handleUnitChanged = (e: any) => {
+      const uId = e.detail?.unitId || null;
+      setSelectedUnitId(uId);
+      fetchAllData(uId);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('crm-unit-changed', handleUnitChanged);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('crm-unit-changed', handleUnitChanged);
+      }
+    };
   }, [isSuperAdmin]);
 
   const fetchTransfers = async () => {

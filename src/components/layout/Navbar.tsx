@@ -6,6 +6,7 @@ import { Search, Bell, Clock, AlertTriangle, Activity, CheckCircle2, Users } fro
 import { useQueueStore } from '@/store/queueStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
+import { GlobalUnitSwitcher } from './GlobalUnitSwitcher';
 
 export function Navbar() {
   const { callsInQueue, emergencyAlerts } = useQueueStore();
@@ -104,6 +105,8 @@ export function Navbar() {
 
       {/* Action Area */}
       <div className="flex items-center gap-5">
+        {/* Global Unit Switcher */}
+        <GlobalUnitSwitcher />
         {/* Alerts & Metrics */}
         <div className="flex gap-3">
           <motion.div 

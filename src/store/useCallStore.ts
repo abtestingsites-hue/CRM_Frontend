@@ -99,7 +99,12 @@ export const useCallStore = create<CallState>((set) => ({
       const baseUrl = process.env.NEXT_PUBLIC_API_URL 
         ? (process.env.NEXT_PUBLIC_API_URL.endsWith('/') ? process.env.NEXT_PUBLIC_API_URL.slice(0, -1) : process.env.NEXT_PUBLIC_API_URL)
         : `${API_BASE_URL}`;
-      const res = await apiFetch(`${baseUrl}/telephony/dashboard-calls`);
+      const selectedUnitId = typeof window !== 'undefined' ? localStorage.getItem('crm_global_selected_unit') : null;
+      let callUrl = `${baseUrl}/telephony/dashboard-calls`;
+      if (selectedUnitId && selectedUnitId !== 'ALL') {
+        callUrl += `?unitId=${encodeURIComponent(selectedUnitId)}`;
+      }
+      const res = await apiFetch(callUrl);
       if (res.ok) {
         const data = await res.json();
         set({ queuedCalls: data.queuedCalls || [], missedCalls: data.missedCalls || [] });
@@ -109,3 +114,9 @@ export const useCallStore = create<CallState>((set) => ({
     }
   },
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('crm-unit-changed', () => {
+    useCallStore.getState().fetchDashboardCalls();
+  });
+}
