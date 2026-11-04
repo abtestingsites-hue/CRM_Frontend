@@ -72,6 +72,9 @@ export default function SuperAdminConsolePage() {
   // Testing integration states
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<any | null>(null);
+  const [integrationSearch, setIntegrationSearch] = useState('');
+  const [integrationCategory, setIntegrationCategory] = useState('ALL');
+  const [switchingProvider, setSwitchingProvider] = useState<string | null>(null);
 
   // Unit modal states
   const [showUnitModal, setShowUnitModal] = useState(false);
@@ -292,6 +295,33 @@ export default function SuperAdminConsolePage() {
     }
   };
 
+  // Switch Integration to Inherit from Global Default (with user confirmation)
+  const handleSwitchToGlobal = async (provider: string) => {
+    if (!selectedUnitId) return;
+    const confirmSwitch = window.confirm(
+      `Are you sure you want to switch ${provider} to inherit from Global Default? Saved unit-specific credentials will remain securely archived and can be restored anytime by configuring overrides.`
+    );
+    if (!confirmSwitch) return;
+
+    setSwitchingProvider(provider);
+    try {
+      const res = await apiFetch(`/api/v1/super-admin/integrations/${provider}/switch-global?unitId=${encodeURIComponent(selectedUnitId)}`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      if (res.ok) {
+        await fetchAllData();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Failed to switch to global default');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Network error while switching to global default');
+    } finally {
+      setSwitchingProvider(null);
+    }
+  };
+
   // Run Integration Health Test
   const handleTestIntegration = async (provider: string) => {
     setTestingProvider(provider);
@@ -357,10 +387,14 @@ export default function SuperAdminConsolePage() {
     provider: string,
     data: { enabled: boolean; settings: Record<string, any>; secret?: string; unitId?: string }
   ) => {
+    const payload = {
+      ...data,
+      unitId: data.unitId !== undefined ? data.unitId : (selectedUnitId || undefined),
+    };
     const res = await apiFetch(`/api/v1/super-admin/integrations/${provider}`, {
       method: 'PUT',
       headers: getHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       setShowConfigModal(false);
@@ -655,12 +689,45 @@ export default function SuperAdminConsolePage() {
         {/* ==================================================== */}
         {activeTab === 'integrations' && (
           <div className="space-y-6 max-w-5xl">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-bold text-white">Enterprise Integrations</h3>
-                <p className="text-xs text-slate-400">
-                  Global defaults and unit-specific overrides with zero plaintext secret exposure.
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white">Enterprise Integrations</h3>
+                  {selectedUnitId ? (
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/40 font-semibold">
+                      Unit: {units.find((u) => u.id === selectedUnitId)?.name || selectedUnitId}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-cyan-950/40 text-cyan-400 border border-cyan-500/30 font-semibold">
+                      Context: Global Platform Defaults
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Unit-specific credential overrides, real-time connectivity testing, and global inheritance governance.
                 </p>
+              </div>
+
+              {/* Search & Category Filter */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={integrationSearch}
+                  onChange={(e) => setIntegrationSearch(e.target.value)}
+                  placeholder="Search integrations..."
+                  className="bg-[#141414] border border-[#282828] rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-primary w-44"
+                />
+                <select
+                  value={integrationCategory}
+                  onChange={(e) => setIntegrationCategory(e.target.value)}
+                  className="bg-[#141414] border border-[#282828] rounded-xl px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-primary cursor-pointer"
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="MESSAGING">Messaging & Social</option>
+                  <option value="TELEPHONY">Telephony & Voice</option>
+                  <option value="MARKETING">Marketing & Web</option>
+                  <option value="AI_CORE">AI & Database Core</option>
+                </select>
               </div>
             </div>
 
@@ -684,7 +751,25 @@ export default function SuperAdminConsolePage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {integrations.map((item) => (
+              {integrations
+                .filter((item) => {
+                  const q = integrationSearch.toLowerCase().trim();
+                  if (q && !item.provider.toLowerCase().includes(q)) return false;
+                  if (integrationCategory === 'MESSAGING') {
+                    return ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'EMAIL', 'SMS'].includes(item.provider);
+                  }
+                  if (integrationCategory === 'TELEPHONY') {
+                    return ['VOBIZ', 'LIVEKIT', 'EXOTEL', 'TWILIO'].includes(item.provider);
+                  }
+                  if (integrationCategory === 'MARKETING') {
+                    return ['WORDPRESS', 'GOOGLE_ADS', 'MAILCHIMP'].includes(item.provider);
+                  }
+                  if (integrationCategory === 'AI_CORE') {
+                    return ['GEMINI', 'SUPABASE'].includes(item.provider);
+                  }
+                  return true;
+                })
+                .map((item) => (
                 <div key={item.id} className="bg-[#080808] border border-[#222] rounded-xl p-4 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -735,6 +820,16 @@ export default function SuperAdminConsolePage() {
                       <Zap className={`w-3 h-3 ${testingProvider === item.provider ? 'animate-spin text-primary' : 'text-slate-400'}`} />
                       {testingProvider === item.provider ? 'Testing...' : 'Test Connectivity'}
                     </button>
+                    {selectedUnitId && item.status === 'UNIT OVERRIDE' && (
+                      <button
+                        onClick={() => handleSwitchToGlobal(item.provider)}
+                        disabled={switchingProvider === item.provider}
+                        title="Revert to inherited global credentials without deleting unit credentials"
+                        className="px-2.5 py-1.5 rounded-lg bg-[#161616] hover:bg-[#222] border border-cyan-800/40 text-[11px] font-medium text-cyan-400 transition-colors"
+                      >
+                        {switchingProvider === item.provider ? 'Reverting...' : 'Inherit Global'}
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setSelectedIntegration(item);

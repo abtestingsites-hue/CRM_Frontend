@@ -256,6 +256,123 @@ const PROVIDER_CONFIG_SCHEMAS: Record<string, { name: string; description: strin
         ]
       }
     ]
+  },
+  FACEBOOK: {
+    name: "Facebook Messenger API",
+    description: "Connect Facebook Page direct messaging with customers.",
+    sections: [
+      {
+        title: "Meta App & Page Credentials",
+        icon: Key,
+        fields: [
+          { key: "pageId", envKey: "META_PAGE_ID", label: "Facebook Page ID", type: "text", placeholder: "106439255625400", help: "Facebook Page ID for inbound and outbound messages" },
+          { key: "accessToken", envKey: "META_PAGE_ACCESS_TOKEN", label: "Page Access Token", type: "password", isSecret: true, placeholder: "EAAY...", help: "Page Access Token with pages_messaging scope" },
+          { key: "appSecret", envKey: "META_APP_SECRET", label: "Meta App Secret", type: "password", isSecret: true, placeholder: "Leave blank to keep current secret", help: "App secret for verifying inbound webhook signatures" }
+        ]
+      },
+      {
+        title: "Webhooks",
+        icon: Server,
+        fields: [
+          { key: "verifyToken", envKey: "META_VERIFY_TOKEN", label: "Webhook Verify Token", type: "text", placeholder: "my_verify_token" },
+          { key: "callbackUrl", envKey: "META_WEBHOOK_URL", label: "Webhook URL", type: "url", defaultValue: "https://crm-uec-backend.onrender.com/webhook" }
+        ]
+      }
+    ]
+  },
+  LINKEDIN: {
+    name: "LinkedIn Lead & Messaging Hub",
+    description: "Synchronize company page enquiries and prospective client messages.",
+    sections: [
+      {
+        title: "LinkedIn API Credentials",
+        icon: Key,
+        fields: [
+          { key: "clientId", envKey: "LINKEDIN_CLIENT_ID", label: "LinkedIn Client ID", type: "text", placeholder: "78xxxxxx" },
+          { key: "clientSecret", envKey: "LINKEDIN_CLIENT_SECRET", label: "LinkedIn Client Secret", type: "password", isSecret: true, placeholder: "Leave blank to keep current secret" },
+          { key: "organizationUrn", envKey: "LINKEDIN_ORGANIZATION_URN", label: "Organization URN", type: "text", placeholder: "urn:li:organization:1234567" },
+          { key: "accessToken", envKey: "LINKEDIN_ACCESS_TOKEN", label: "OAuth Access Token", type: "password", isSecret: true, placeholder: "AQV..." }
+        ]
+      }
+    ]
+  },
+  SMS: {
+    name: "Enterprise SMS Gateway",
+    description: "High-throughput transactional and campaign SMS gateway.",
+    sections: [
+      {
+        title: "SMS Gateway Credentials",
+        icon: Key,
+        fields: [
+          { key: "accountSid", envKey: "SMS_ACCOUNT_SID", label: "SMS Account SID / Username", type: "text", placeholder: "ACxxxxxx" },
+          { key: "authToken", envKey: "SMS_AUTH_TOKEN", label: "SMS Auth Token / Password", type: "password", isSecret: true, placeholder: "Leave blank to keep token" },
+          { key: "senderId", envKey: "SMS_SENDER_ID", label: "Sender Header ID (DLT)", type: "text", placeholder: "CRMTOOL" },
+          { key: "dltEntityId", envKey: "DLT_ENTITY_ID", label: "Principal Entity ID (DLT)", type: "text", placeholder: "1701xxxxxxxxxxxx" }
+        ]
+      }
+    ]
+  },
+  TWILIO: {
+    name: "Twilio Telephony & Messaging",
+    description: "International telephony trunking, SMS and WhatsApp business fallback.",
+    sections: [
+      {
+        title: "Twilio API Credentials",
+        icon: Key,
+        fields: [
+          { key: "accountSid", envKey: "TWILIO_ACCOUNT_SID", label: "Twilio Account SID", type: "text", placeholder: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" },
+          { key: "authToken", envKey: "TWILIO_AUTH_TOKEN", label: "Twilio Auth Token", type: "password", isSecret: true, placeholder: "Leave blank to keep token" },
+          { key: "fromNumber", envKey: "TWILIO_PHONE_NUMBER", label: "Twilio Phone / WhatsApp Number", type: "text", placeholder: "whatsapp:+14155238886" }
+        ]
+      }
+    ]
+  },
+  WORDPRESS: {
+    name: "WordPress & Web Form Gateways",
+    description: "Ingest client leads and consultation requests from public websites.",
+    sections: [
+      {
+        title: "Webhook Security & Authentication",
+        icon: Server,
+        fields: [
+          { key: "webhookSecret", envKey: "WEBSITE_LEADS_SECRET", label: "Inbound Shared Secret / Signature Key", type: "password", isSecret: true, placeholder: "sec_xxxxxxxx_2026" },
+          { key: "endpointUrl", envKey: "WORDPRESS_WEBHOOK_URL", label: "CRM Inbound Ingest Endpoint", type: "url", defaultValue: "https://crm-uec-backend.onrender.com/api/v1/webhooks/leads" },
+          { key: "allowedDomains", envKey: "WORDPRESS_ALLOWED_DOMAINS", label: "Allowed Origin Domains", type: "text", placeholder: "anbusrisaihomenursing.com, thathapatti.com, uncftrust.org" }
+        ]
+      }
+    ]
+  },
+  GOOGLE_ADS: {
+    name: "Google Ads & Analytics",
+    description: "Synchronize search ad conversions and caller lead attribution.",
+    sections: [
+      {
+        title: "Google Ads API Credentials",
+        icon: Key,
+        fields: [
+          { key: "customerId", envKey: "GOOGLE_ADS_CUSTOMER_ID", label: "Customer Account ID", type: "text", placeholder: "123-456-7890" },
+          { key: "developerToken", envKey: "GOOGLE_ADS_DEVELOPER_TOKEN", label: "Developer Token", type: "password", isSecret: true, placeholder: "Leave blank to keep token" },
+          { key: "clientId", envKey: "GOOGLE_ADS_CLIENT_ID", label: "OAuth Client ID", type: "text", placeholder: "xxxxxx.apps.googleusercontent.com" },
+          { key: "clientSecret", envKey: "GOOGLE_ADS_CLIENT_SECRET", label: "OAuth Client Secret", type: "password", isSecret: true, placeholder: "Leave blank to keep secret" },
+          { key: "refreshToken", envKey: "GOOGLE_ADS_REFRESH_TOKEN", label: "OAuth Refresh Token", type: "password", isSecret: true, placeholder: "1//xxxxxx" }
+        ]
+      }
+    ]
+  },
+  MAILCHIMP: {
+    name: "Mailchimp Newsletter & Campaigns",
+    description: "Automate email subscriber lists and marketing audience synchronizations.",
+    sections: [
+      {
+        title: "Mailchimp API Credentials",
+        icon: Key,
+        fields: [
+          { key: "apiKey", envKey: "MAILCHIMP_API_KEY", label: "Mailchimp API Key", type: "password", isSecret: true, placeholder: "xxxxxx-us14" },
+          { key: "serverPrefix", envKey: "MAILCHIMP_SERVER_PREFIX", label: "Server Prefix (Data Center)", type: "text", placeholder: "us14" },
+          { key: "audienceId", envKey: "MAILCHIMP_AUDIENCE_ID", label: "Default Audience / List ID", type: "text", placeholder: "a1b2c3d4e5" }
+        ]
+      }
+    ]
   }
 };
 
