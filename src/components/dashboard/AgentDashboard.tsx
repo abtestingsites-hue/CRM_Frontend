@@ -6,12 +6,14 @@ import {
   Phone, PhoneIncoming, PhoneMissed, PhoneForwarded, MessageSquare, 
   Ticket, CheckCircle2, Clock, Users, ArrowUpRight, Shield, 
   AlertTriangle, Flame, Sparkles, Building, Calendar, Layers, 
-  Volume2, Play, ChevronRight, RefreshCw, X, ShieldAlert, Target
+  Volume2, Play, ChevronRight, RefreshCw, X, ShieldAlert, Target,
+  Plus, UserPlus
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useSocket } from '@/providers/SocketProvider';
 import { useCallStore } from '@/store/useCallStore';
 import { NumericKeypad } from '@/components/call-center/NumericKeypad';
+import { CallIntakeFormModal } from '@/components/call-center/CallIntakeFormModal';
 
 interface AgentDashboardProps {
   metrics?: any;
@@ -31,6 +33,10 @@ export function AgentDashboard({ metrics: initialMetrics }: AgentDashboardProps)
 
   // Compact Dialpad modal state
   const [showDialpadModal, setShowDialpadModal] = useState(false);
+
+  // Phase 27 Create Lead Intake Modal state
+  const [showCreateLeadModal, setShowCreateLeadModal] = useState(false);
+  const [createLeadInitialPhone, setCreateLeadInitialPhone] = useState('');
 
   // Active call logs filter in chart
   const [chartOutcomeFilter, setChartOutcomeFilter] = useState<'all' | 'connected' | 'missed' | 'unanswered' | 'failed'>('all');
@@ -186,13 +192,25 @@ export function AgentDashboard({ metrics: initialMetrics }: AgentDashboardProps)
         </div>
 
         {/* Action Controls & Compact Dialpad Launcher */}
-        <div className="flex items-center gap-3 z-10 self-start lg:self-auto">
+        <div className="flex flex-wrap items-center gap-3 z-10 self-start lg:self-auto">
           <button
             onClick={() => setShowDialpadModal(true)}
             className="px-4 py-2.5 rounded-xl bg-[#181818] hover:bg-[#222] border border-[#2a2a2a] hover:border-orange-500/40 text-xs font-bold text-white flex items-center gap-2 transition-all shadow-md active:scale-95"
           >
             <Phone className="w-4 h-4 text-orange-500" />
             <span>Open Dialpad</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCreateLeadInitialPhone('');
+              setShowCreateLeadModal(true);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/40 text-xs font-bold text-orange-400 hover:text-white flex items-center gap-2 transition-all shadow-md active:scale-95"
+            title="Create Lead / Record Manual Enquiry"
+          >
+            <Plus className="w-4 h-4 text-orange-400" />
+            <span>Create Lead</span>
           </button>
 
           <button
@@ -763,10 +781,34 @@ export function AgentDashboard({ metrics: initialMetrics }: AgentDashboardProps)
             </div>
 
             <div className="p-4">
-              <NumericKeypad onCallInitiated={() => setShowDialpadModal(false)} />
+              <NumericKeypad 
+                onCallInitiated={() => setShowDialpadModal(false)}
+                onCreateLead={(typedPhone) => {
+                  setShowDialpadModal(false);
+                  setCreateLeadInitialPhone(typedPhone || '');
+                  setShowCreateLeadModal(true);
+                }}
+              />
             </div>
           </div>
         </div>
+      )}
+
+      {/* PHASE 27 CREATE LEAD MODAL */}
+      {showCreateLeadModal && (
+        <CallIntakeFormModal
+          isOpen={showCreateLeadModal}
+          phoneNumber={createLeadInitialPhone}
+          onClose={() => {
+            setShowCreateLeadModal(false);
+            setCreateLeadInitialPhone('');
+          }}
+          onSuccess={() => {
+            setShowCreateLeadModal(false);
+            setCreateLeadInitialPhone('');
+            loadDashboardData();
+          }}
+        />
       )}
     </div>
   );

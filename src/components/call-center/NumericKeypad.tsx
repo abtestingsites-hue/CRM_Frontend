@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Phone, PhoneCall, Delete, X, AlertCircle, Volume2, ShieldCheck, Check } from 'lucide-react';
+import { Phone, PhoneCall, Delete, X, AlertCircle, Volume2, ShieldCheck, Check, UserPlus } from 'lucide-react';
 import { useCallStore } from '@/store/useCallStore';
 import { useAuthStore } from '@/store/authStore';
 import { apiFetch } from '@/lib/api';
 
 interface NumericKeypadProps {
   onCallInitiated?: (data: any) => void;
+  onCreateLead?: (phoneNumber: string) => void;
 }
 
-export function NumericKeypad({ onCallInitiated }: NumericKeypadProps) {
+export function NumericKeypad({ onCallInitiated, onCreateLead }: NumericKeypadProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isDialing, setIsDialing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -344,6 +345,17 @@ export function NumericKeypad({ onCallInitiated }: NumericKeypadProps) {
           {isDialing ? 'Dialing...' : activeCall ? 'Call Active' : 'Start Outbound Call'}
         </span>
       </button>
+
+      {onCreateLead && (
+        <button
+          type="button"
+          onClick={() => onCreateLead(phoneNumber)}
+          className="w-full mt-2.5 py-2.5 rounded-xl bg-[#161616] hover:bg-[#202020] border border-[#2a2a2a] hover:border-orange-500/40 text-xs font-bold text-orange-400 hover:text-white flex items-center justify-center gap-2 transition-all active:scale-98"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Create Lead With This Number</span>
+        </button>
+      )}
 
       <p className="text-[11px] text-slate-500 mt-3 text-center">
         Press keys or type on your keyboard. Press Enter to dial.

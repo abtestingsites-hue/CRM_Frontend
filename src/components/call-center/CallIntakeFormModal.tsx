@@ -181,9 +181,16 @@ export function CallIntakeFormModal({
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [multipleMatchesList, setMultipleMatchesList] = useState<any[]>([]);
 
-  // Disposition
-  const [callOutcome, setCallOutcome] = useState('COMPLETED');
+  // Phase 27 — Agent Feedback & Customer Disposition State
+  const [interestLevel, setInterestLevel] = useState<'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_INTERESTED' | 'PENDING'>('PENDING');
+  const [customerDisposition, setCustomerDisposition] = useState('CONTACTED');
+  const [agentFeedback, setAgentFeedback] = useState('');
+  const [nextAction, setNextAction] = useState('CALL_AGAIN');
   const [followupDate, setFollowupDate] = useState('');
+  const [followupTime, setFollowupTime] = useState('10:00');
+  const [followupType, setFollowupType] = useState('CALLBACK');
+  const [followupNotes, setFollowupNotes] = useState('');
+  const [callOutcome, setCallOutcome] = useState('COMPLETED');
   const [callbackRequired, setCallbackRequired] = useState(false);
   const [callbackPriority, setCallbackPriority] = useState('NORMAL');
 
@@ -422,6 +429,13 @@ export function CallIntakeFormModal({
           if (draft.callOutcome) setCallOutcome(draft.callOutcome);
           if (draft.followupDate) setFollowupDate(draft.followupDate);
           if (draft.whatsappStatus) setWhatsappStatus(draft.whatsappStatus);
+          if (draft.interestLevel) setInterestLevel(draft.interestLevel);
+          if (draft.customerDisposition) setCustomerDisposition(draft.customerDisposition);
+          if (draft.agentFeedback) setAgentFeedback(draft.agentFeedback);
+          if (draft.nextAction) setNextAction(draft.nextAction);
+          if (draft.followupTime) setFollowupTime(draft.followupTime);
+          if (draft.followupType) setFollowupType(draft.followupType);
+          if (draft.followupNotes) setFollowupNotes(draft.followupNotes);
           setDraftStatus('SAVED');
           restoredFromDraft = true;
         }
@@ -464,6 +478,23 @@ export function CallIntakeFormModal({
         if (initialData.postalCode) setPostalCode(initialData.postalCode);
         if (initialData.notes || initialData.liveNotes) setLiveNotesText(initialData.notes || initialData.liveNotes);
         if (initialData.whatsappStatus) setWhatsappStatus(initialData.whatsappStatus);
+        if (initialData.interestLevel) setInterestLevel(initialData.interestLevel);
+        if (initialData.customerDisposition) setCustomerDisposition(initialData.customerDisposition);
+        else if (initialData.status) setCustomerDisposition(initialData.status);
+        if (initialData.agentFeedback) setAgentFeedback(initialData.agentFeedback);
+        else if (initialData.notes) setAgentFeedback(initialData.notes);
+        if (initialData.nextAction) setNextAction(initialData.nextAction);
+        if (initialData.followupDate) {
+          const dt = new Date(initialData.followupDate);
+          if (!isNaN(dt.getTime())) {
+            setFollowupDate(dt.toISOString().split('T')[0]);
+            const hrs = String(dt.getHours()).padStart(2, '0');
+            const mins = String(dt.getMinutes()).padStart(2, '0');
+            setFollowupTime(initialData.followupTime || `${hrs}:${mins}`);
+          }
+        }
+        if (initialData.followupType) setFollowupType(initialData.followupType);
+        if (initialData.followupNotes) setFollowupNotes(initialData.followupNotes);
       } else {
         const parsed = splitPhoneAndCountryCode(phoneNumber);
         setPrimaryCountryCode(parsed.countryCode);
@@ -578,6 +609,13 @@ export function CallIntakeFormModal({
         callOutcome,
         followupDate,
         whatsappStatus,
+        interestLevel,
+        customerDisposition,
+        agentFeedback,
+        nextAction,
+        followupTime,
+        followupType,
+        followupNotes,
       };
 
       // 1. Save locally
@@ -619,7 +657,8 @@ export function CallIntakeFormModal({
     patientName, patientAge, patientWeight, patientWeightUnit, patientConditions, patientMobility,
     engagementType, careDurationCategory, careDuration, careSchedule,
     street, city, state, country, postalCode, pickupLocation, destinationLocation,
-    liveNotesText, callOutcome, followupDate, effectiveSessionId, callSid, whatsappStatus
+    liveNotesText, callOutcome, followupDate, effectiveSessionId, callSid, whatsappStatus,
+    interestLevel, customerDisposition, agentFeedback, nextAction, followupTime, followupType, followupNotes
   ]);
 
   if (!isOpen) return null;
@@ -640,6 +679,16 @@ export function CallIntakeFormModal({
         return;
       }
       numWeight = parsed;
+    }
+
+    // Validate follow-up date and time if required by disposition or next action
+    const requiresFollowup = customerDisposition === 'FOLLOWUP_REQUIRED' || nextAction === 'CALL_AGAIN' || nextAction === 'SCHEDULE_APPOINTMENT';
+    if (requiresFollowup) {
+      if (!followupDate || !followupTime) {
+        setErrorMessage('Follow-up Date and Time are mandatory when Follow-up Required or Appointment is selected.');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Compute normalized full numbers
@@ -687,7 +736,15 @@ export function CallIntakeFormModal({
       destinationLocation: isAmbulance ? destinationLocation : undefined,
       liveNotes: liveNotesText,
       callOutcome,
-      followupDate: followupDate ? new Date(followupDate).toISOString() : undefined,
+      // Phase 27 Agent Feedback & Customer Disposition Payload
+      interestLevel,
+      customerDisposition,
+      agentFeedback: agentFeedback || liveNotesText || undefined,
+      nextAction,
+      followupDate: followupDate ? (followupTime ? `${followupDate}T${followupTime}:00` : new Date(followupDate).toISOString()) : undefined,
+      followupTime: followupTime || undefined,
+      followupType,
+      followupNotes: followupNotes || undefined,
       callbackRequired,
       callbackPriority,
       whatsappStatus,
@@ -1623,42 +1680,218 @@ export function CallIntakeFormModal({
           />
         </div>
 
-        {/* 6. DISPOSITION & FOLLOW-UP */}
-        <div className="space-y-3">
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1b2631] pb-1">
-            6. Interaction Outcome & Follow-Up
-          </h4>
+        {/* 6. AGENT FEEDBACK & CUSTOMER DISPOSITION (PHASE 27) */}
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between border-b border-[#1b2631] pb-2">
+            <h4 className="text-[12px] font-bold uppercase tracking-wider text-orange-400 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-orange-400" />
+              <span>6. Agent Feedback & Customer Disposition</span>
+            </h4>
+            <span className="text-[10px] text-slate-400">Phase 27 Intelligence & Calendar Sync</span>
+          </div>
 
+          {/* 1. Customer Interest Level */}
+          <div>
+            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1.5">
+              Customer Interest Level
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {[
+                { value: 'HIGH', label: 'High', color: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' },
+                { value: 'MEDIUM', label: 'Medium', color: 'border-blue-500/50 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' },
+                { value: 'LOW', label: 'Low', color: 'border-amber-500/50 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' },
+                { value: 'NOT_INTERESTED', label: 'Not Interested', color: 'border-rose-500/50 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' },
+                { value: 'PENDING', label: 'Pending / Undecided', color: 'border-slate-500/50 bg-slate-500/10 text-slate-300 hover:bg-slate-500/20' },
+              ].map((lvl) => {
+                const isSelected = interestLevel === lvl.value;
+                return (
+                  <button
+                    key={lvl.value}
+                    type="button"
+                    onClick={() => {
+                      setInterestLevel(lvl.value as any);
+                      userHasEditedRef.current = true;
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center gap-1.5 ${
+                      isSelected
+                        ? `${lvl.color} ring-2 ring-orange-500 font-extrabold shadow-md scale-100`
+                        : 'border-[#223344] bg-[#101720] text-slate-400 hover:border-[#334455]'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5" />}
+                    <span>{lvl.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Customer Interaction Status & Next Action Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Call Outcome</label>
+              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Customer Interaction Status <span className="text-orange-400">*</span>
+              </label>
               <select
-                value={callOutcome}
+                value={customerDisposition}
                 onChange={(e) => {
-                  setCallOutcome(e.target.value);
+                  const val = e.target.value;
+                  setCustomerDisposition(val);
+                  setCallOutcome(val);
                   userHasEditedRef.current = true;
+                  if (val === 'FOLLOWUP_REQUIRED' && !followupDate) {
+                    const tmrw = new Date();
+                    tmrw.setDate(tmrw.getDate() + 1);
+                    setFollowupDate(tmrw.toISOString().split('T')[0]);
+                  }
                 }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
+                className="w-full bg-[#121b24] border border-[#233342] rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-orange-500"
               >
-                <option value="COMPLETED">Enquiry Completed / Order Placed</option>
-                <option value="FOLLOWUP_NEEDED">Follow-up Needed (Interested)</option>
-                <option value="CALLBACK_REQUESTED">Callback Requested by Customer</option>
-                <option value="PRICE_NEGOTIATION">Price / Package Negotiation</option>
-                <option value="UNANSWERED">Call Unanswered / Voicemail</option>
-                <option value="CANCELLED">Customer Cancelled Enquiry</option>
+                <option value="NEW">New (Initial Enquiry)</option>
+                <option value="CONTACTED">Contacted (In Discussion)</option>
+                <option value="INTERESTED">Interested (High Propensity)</option>
+                <option value="FOLLOWUP_REQUIRED">Follow-up Required (Callback / Action)</option>
+                <option value="APPOINTMENT_SCHEDULED">Appointment Scheduled (Calendar Booked)</option>
+                <option value="PROPOSAL_SHARED">Proposal Shared (Quotation Sent)</option>
+                <option value="CONVERTED">Converted (Active Customer / Order Placed)</option>
+                <option value="NOT_INTERESTED">Not Interested (Declined Service)</option>
+                <option value="UNREACHABLE">Unreachable (No Answer / Voicemail)</option>
+                <option value="CLOSED_LOST">Closed / Lost (Disqualified)</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Schedule Follow-up Date & Time</label>
-              <input
-                type="datetime-local"
-                value={followupDate}
+              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Next Action Required
+              </label>
+              <select
+                value={nextAction}
                 onChange={(e) => {
-                  setFollowupDate(e.target.value);
+                  setNextAction(e.target.value);
+                  userHasEditedRef.current = true;
+                  if ((e.target.value === 'CALL_AGAIN' || e.target.value === 'SCHEDULE_APPOINTMENT') && !followupDate) {
+                    const tmrw = new Date();
+                    tmrw.setDate(tmrw.getDate() + 1);
+                    setFollowupDate(tmrw.toISOString().split('T')[0]);
+                  }
+                }}
+                className="w-full bg-[#121b24] border border-[#233342] rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-orange-500"
+              >
+                <option value="CALL_AGAIN">Call Again (Follow-up Call)</option>
+                <option value="WHATSAPP_FOLLOWUP">Send WhatsApp Follow-up</option>
+                <option value="SEND_INFO">Send Information / Brochure / Service Kit</option>
+                <option value="SCHEDULE_APPOINTMENT">Schedule In-Person / Virtual Appointment</option>
+                <option value="SHARE_QUOTATION">Share Quotation / Cost Estimate</option>
+                <option value="ARRANGE_CONSULTATION">Arrange Specialist / Clinical Consultation</option>
+                <option value="NO_FURTHER_ACTION">No Further Action Needed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 3. Agent Feedback / Interaction Notes Textarea */}
+          <div>
+            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+              Agent Feedback & Qualitative Observations
+            </label>
+            <textarea
+              rows={2}
+              value={agentFeedback}
+              onChange={(e) => {
+                setAgentFeedback(e.target.value);
+                userHasEditedRef.current = true;
+              }}
+              placeholder="Record customer preferences, family decisions, specific clinical concerns, objections, and next milestone..."
+              className="w-full bg-[#121b24] border border-[#233342] rounded-xl p-3 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500"
+            />
+          </div>
+
+          {/* 4. Follow-up Scheduling Sub-section (Mandatory when FOLLOWUP_REQUIRED or CALL_AGAIN / APPOINTMENT) */}
+          <div className={`p-4 rounded-xl border transition-all ${
+            (customerDisposition === 'FOLLOWUP_REQUIRED' || nextAction === 'CALL_AGAIN' || nextAction === 'SCHEDULE_APPOINTMENT')
+              ? 'bg-amber-950/20 border-amber-500/40 shadow-md'
+              : 'bg-[#101720] border-[#223344]'
+          }`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-orange-400" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Automatic Calendar Follow-up Scheduling
+                </span>
+              </div>
+              {(customerDisposition === 'FOLLOWUP_REQUIRED' || nextAction === 'CALL_AGAIN' || nextAction === 'SCHEDULE_APPOINTMENT') ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Mandatory for this disposition
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500">Optional</span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                  Follow-up Date {(customerDisposition === 'FOLLOWUP_REQUIRED' || nextAction === 'CALL_AGAIN' || nextAction === 'SCHEDULE_APPOINTMENT') && <span className="text-orange-400">*</span>}
+                </label>
+                <input
+                  type="date"
+                  value={followupDate}
+                  onChange={(e) => {
+                    setFollowupDate(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                  Follow-up Time {(customerDisposition === 'FOLLOWUP_REQUIRED' || nextAction === 'CALL_AGAIN' || nextAction === 'SCHEDULE_APPOINTMENT') && <span className="text-orange-400">*</span>}
+                </label>
+                <input
+                  type="time"
+                  value={followupTime}
+                  onChange={(e) => {
+                    setFollowupTime(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                  Follow-up Channel / Type
+                </label>
+                <select
+                  value={followupType}
+                  onChange={(e) => {
+                    setFollowupType(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
+                >
+                  <option value="CALLBACK">Phone Call (Callback)</option>
+                  <option value="WHATSAPP">WhatsApp Message</option>
+                  <option value="APPOINTMENT">In-Person Visit / Assessment</option>
+                  <option value="CONSULTATION">Video Consultation</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                Follow-up Notes / Agenda (Visible in CRM Calendar)
+              </label>
+              <input
+                type="text"
+                value={followupNotes}
+                onChange={(e) => {
+                  setFollowupNotes(e.target.value);
                   userHasEditedRef.current = true;
                 }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
+                placeholder="e.g. Confirm 12hr care package pricing with patient's family, finalize onboarding"
+                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500"
               />
             </div>
           </div>

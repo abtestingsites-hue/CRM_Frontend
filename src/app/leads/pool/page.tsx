@@ -7,7 +7,6 @@ import { CallIntakeFormModal } from '@/components/call-center/CallIntakeFormModa
 import { CustomerHistoryDrawer } from '@/components/call-center/CustomerHistoryDrawer';
 import {
   Phone,
-  Users,
   Calendar,
   AlertCircle,
   Filter,
@@ -26,19 +25,39 @@ import {
   History,
   CheckCircle2,
   Clock,
-  Sparkles,
   HeartPulse,
   MapPin,
-  ExternalLink,
   RefreshCw,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  Tag,
+  Scale,
+  Sparkles,
+  ShieldAlert,
+  Check,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LeadPoolPage() {
   const { leads, fetchLeads, claimLead, isLoading } = useLeadStore();
   const { setActiveCall } = useCallStore();
+
+  // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
+  const [orgFilter, setOrgFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [agentFilter, setAgentFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState<'CREATED_DESC' | 'CREATED_ASC' | 'NAME_ASC' | 'FOLLOWUP_ASC'>('CREATED_DESC');
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
+  // Subservices tooltip/modal preview
+  const [hoveredSubservicesLeadId, setHoveredSubservicesLeadId] = useState<string | null>(null);
 
   // Intake Form Modal (Manual Entry & Edit Details)
   const [isIntakeOpen, setIsIntakeOpen] = useState(false);
@@ -51,41 +70,8 @@ export default function LeadPoolPage() {
   // Action notification toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const getSourceIcon = (source?: string | null) => {
-    const s = source?.toLowerCase() || '';
-    if (s.includes('whatsapp')) return <MessageCircle className="w-4 h-4 text-emerald-400" />;
-    if (s.includes('facebook')) return <ThumbsUp className="w-4 h-4 text-blue-500" />;
-    if (s.includes('instagram')) return <Camera className="w-4 h-4 text-pink-500" />;
-    if (s.includes('email')) return <Mail className="w-4 h-4 text-rose-400" />;
-    if (s.includes('referral')) return <UserPlus className="w-4 h-4 text-purple-400" />;
-    if (s.includes('walk-in') || s.includes('walkin')) return <Store className="w-4 h-4 text-amber-400" />;
-    if (s.includes('inbound') || s.includes('incoming')) return <PhoneCall className="w-4 h-4 text-emerald-400" />;
-    if (s.includes('outbound') || s.includes('outgoing')) return <Phone className="w-4 h-4 text-blue-400" />;
-    if (s.includes('manual')) return <FileText className="w-4 h-4 text-cyan-400" />;
-    return <Globe className="w-4 h-4 text-slate-400" />;
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'NEW':
-        return <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold border border-blue-500/30">NEW</span>;
-      case 'CONTACTED':
-        return <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/30">CONTACTED</span>;
-      case 'QUALIFIED':
-        return <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-semibold border border-purple-500/30">QUALIFIED</span>;
-      case 'CONVERTED':
-        return <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/30">CONVERTED</span>;
-      case 'FOLLOWUP_REQUIRED':
-        return <span className="px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-semibold border border-orange-500/30">FOLLOW-UP</span>;
-      case 'LOST':
-        return <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-semibold border border-rose-500/30">LOST</span>;
-      default:
-        return <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold border border-[#333]">{status}</span>;
-    }
-  };
-
   const reloadLeads = () => {
-    const token = localStorage.getItem('paramantra_access_token') || '';
+    const token = typeof localStorage !== 'undefined' ? (localStorage.getItem('paramantra_access_token') || '') : '';
     fetchLeads(token, '');
   };
 
@@ -159,32 +145,195 @@ export default function LeadPoolPage() {
     setIsHistoryOpen(true);
   };
 
-  // Filtered Leads
-  const filteredLeads = useMemo(() => {
-    return leads.filter((l) => {
-      if (!l) return false;
-      if (statusFilter !== 'ALL' && l.status !== statusFilter) return false;
+  const getSourceIcon = (source?: string | null) => {
+    const s = source?.toLowerCase() || '';
+    if (s.includes('whatsapp')) return <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />;
+    if (s.includes('facebook')) return <ThumbsUp className="w-3.5 h-3.5 text-blue-500" />;
+    if (s.includes('instagram')) return <Camera className="w-3.5 h-3.5 text-pink-500" />;
+    if (s.includes('email')) return <Mail className="w-3.5 h-3.5 text-rose-400" />;
+    if (s.includes('referral')) return <UserPlus className="w-3.5 h-3.5 text-purple-400" />;
+    if (s.includes('walk-in') || s.includes('walkin')) return <Store className="w-3.5 h-3.5 text-amber-400" />;
+    if (s.includes('inbound') || s.includes('incoming')) return <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />;
+    if (s.includes('outbound') || s.includes('outgoing')) return <Phone className="w-3.5 h-3.5 text-blue-400" />;
+    if (s.includes('manual')) return <FileText className="w-3.5 h-3.5 text-cyan-400" />;
+    return <Globe className="w-3.5 h-3.5 text-slate-400" />;
+  };
 
-      const q = searchTerm.toLowerCase();
-      const name = (l.customerName || '').toLowerCase();
-      const phone = (l.phoneNumber || '').toLowerCase();
-      const service = (l.primaryService || l.serviceInterest || '').toLowerCase();
-      const patient = (l.patientName || '').toLowerCase();
-      const summary = (l.enquirySummary || '').toLowerCase();
-
+  const getOrganizationBadge = (orgName?: string | null) => {
+    const org = (orgName || 'UEC').toUpperCase();
+    if (org.includes('UNCF')) {
       return (
-        name.includes(q) ||
-        phone.includes(q) ||
-        service.includes(q) ||
-        patient.includes(q) ||
-        summary.includes(q)
+        <span className="px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 font-bold text-[11px] border border-indigo-500/30 flex items-center gap-1">
+          <Building2 className="w-3 h-3 text-indigo-400" />
+          <span>UNCF</span>
+        </span>
       );
+    }
+    if (org.includes('ACARE') || org.includes('A_CARE')) {
+      return (
+        <span className="px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 font-bold text-[11px] border border-rose-500/30 flex items-center gap-1">
+          <Building2 className="w-3 h-3 text-rose-400" />
+          <span>ACare</span>
+        </span>
+      );
+    }
+    return (
+      <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 font-bold text-[11px] border border-emerald-500/30 flex items-center gap-1">
+        <Building2 className="w-3 h-3 text-emerald-400" />
+        <span>UEC</span>
+      </span>
+    );
+  };
+
+  const getStatusBadge = (status: string, disposition?: string | null) => {
+    const disp = disposition || status;
+    const s = (status || '').toUpperCase();
+    if (s === 'CONVERTED' || disp === 'CONVERTED') {
+      return <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[11px] font-bold border border-purple-500/30">CONVERTED</span>;
+    }
+    if (s === 'POSITIVE' || disp === 'INTERESTED' || disp === 'APPOINTMENT_SCHEDULED') {
+      return <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-bold border border-emerald-500/30">POSITIVE</span>;
+    }
+    if (s === 'FOLLOWUP_REQUIRED' || disp === 'FOLLOWUP_REQUIRED' || disp === 'CALLBACK_REQUESTED') {
+      return <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[11px] font-bold border border-amber-500/30">FOLLOW-UP</span>;
+    }
+    if (s === 'IN_PROGRESS' || disp === 'CONTACTED' || disp === 'PROPOSAL_SHARED') {
+      return <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[11px] font-bold border border-blue-500/30">IN PROGRESS</span>;
+    }
+    if (s === 'CLOSED' || s === 'NEGATIVE' || disp === 'CLOSED_LOST' || disp === 'NOT_INTERESTED') {
+      return <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-[11px] font-bold border border-rose-500/30">CLOSED</span>;
+    }
+    return <span className="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[11px] font-bold border border-blue-500/30">NEW</span>;
+  };
+
+  const formatFollowupDate = (dateStr?: string | null) => {
+    if (!dateStr) return null;
+    const dt = new Date(dateStr);
+    if (isNaN(dt.getTime())) return null;
+
+    const now = new Date();
+    const isPast = dt.getTime() < now.getTime();
+    const isToday = dt.toDateString() === now.toDateString();
+
+    const dateFormatted = dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const timeFormatted = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (isPast) {
+      return {
+        label: `${dateFormatted}, ${timeFormatted}`,
+        badge: 'Overdue',
+        color: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+      };
+    }
+    if (isToday) {
+      return {
+        label: `Today ${timeFormatted}`,
+        badge: 'Today',
+        color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+      };
+    }
+    return {
+      label: `${dateFormatted}, ${timeFormatted}`,
+      badge: 'Upcoming',
+      color: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+    };
+  };
+
+  // Filter & Sort Logic
+  const filteredAndSortedLeads = useMemo(() => {
+    let result = leads.filter((l) => {
+      if (!l) return false;
+
+      // Status Filter
+      if (statusFilter !== 'ALL') {
+        if (statusFilter === 'NEW' && l.status !== 'NEW') return false;
+        if (statusFilter === 'CONTACTED' && l.status !== 'IN_PROGRESS' && l.customerDisposition !== 'CONTACTED') return false;
+        if (statusFilter === 'IN_PROGRESS' && l.status !== 'IN_PROGRESS') return false;
+        if (statusFilter === 'FOLLOWUP_REQUIRED' && l.status !== 'FOLLOWUP_REQUIRED') return false;
+        if (statusFilter === 'POSITIVE' && l.status !== 'POSITIVE') return false;
+        if (statusFilter === 'CONVERTED' && l.status !== 'CONVERTED') return false;
+        if (statusFilter === 'CLOSED' && l.status !== 'CLOSED' && l.status !== 'NEGATIVE') return false;
+      }
+
+      // Organization Filter
+      if (orgFilter !== 'ALL') {
+        const leadOrg = (l.foundation || l.unitName || '').toUpperCase();
+        if (!leadOrg.includes(orgFilter.toUpperCase())) return false;
+      }
+
+      // Category Filter
+      if (categoryFilter !== 'ALL') {
+        if (categoryFilter === 'AMBULANCE') {
+          if (!l.isAmbulanceEmergency && !l.primaryService?.toLowerCase().includes('ambulance')) return false;
+        } else if (l.enquiryCategory !== categoryFilter) {
+          return false;
+        }
+      }
+
+      // Agent Filter
+      if (agentFilter !== 'ALL') {
+        if (agentFilter === 'UNASSIGNED' && l.assignedAgentId) return false;
+        if (agentFilter === 'ASSIGNED' && !l.assignedAgentId) return false;
+      }
+
+      // Search Filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const name = (l.customerName || '').toLowerCase();
+        const phone = (l.phoneNumber || '').toLowerCase();
+        const secPhone = (l.secondaryPhone || '').toLowerCase();
+        const service = (l.primaryService || l.serviceInterest || '').toLowerCase();
+        const patient = (l.patientName || '').toLowerCase();
+        const agent = (l.agentName || '').toLowerCase();
+        const org = (l.foundation || '').toLowerCase();
+
+        return (
+          name.includes(q) ||
+          phone.includes(q) ||
+          secPhone.includes(q) ||
+          service.includes(q) ||
+          patient.includes(q) ||
+          agent.includes(q) ||
+          org.includes(q)
+        );
+      }
+
+      return true;
     });
-  }, [leads, searchTerm, statusFilter]);
+
+    // Sorting
+    result.sort((a, b) => {
+      if (sortBy === 'CREATED_DESC') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortBy === 'CREATED_ASC') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortBy === 'NAME_ASC') {
+        return (a.customerName || '').localeCompare(b.customerName || '');
+      }
+      if (sortBy === 'FOLLOWUP_ASC') {
+        const aDate = a.followupDate ? new Date(a.followupDate).getTime() : 9999999999999;
+        const bDate = b.followupDate ? new Date(b.followupDate).getTime() : 9999999999999;
+        return aDate - bDate;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [leads, statusFilter, orgFilter, categoryFilter, agentFilter, searchTerm, sortBy]);
+
+  // Paginated Slices
+  const totalLeads = filteredAndSortedLeads.length;
+  const totalPages = Math.ceil(totalLeads / pageSize) || 1;
+  const paginatedLeads = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAndSortedLeads.slice(start, start + pageSize);
+  }, [filteredAndSortedLeads, currentPage, pageSize]);
 
   return (
     <div className="p-4 md:p-6 bg-[#050505] min-h-screen text-white">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1700px] mx-auto space-y-6">
         
         {/* Toast Notification */}
         {toastMessage && (
@@ -194,14 +343,17 @@ export default function LeadPoolPage() {
           </div>
         )}
 
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#222]">
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl font-bold tracking-tight text-white">Lead Data</h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30 text-xs font-semibold">
+                {totalLeads} {totalLeads === 1 ? 'Record' : 'Records'}
+              </span>
             </div>
             <p className="text-slate-400 text-xs mt-1">
-              Structured client enquiries, requested care service requirements, and persistent disposition tracking.
+              Comprehensive customer intake table, care requirements, multi-unit routing, and persistent disposition tracking.
             </p>
           </div>
           
@@ -229,266 +381,516 @@ export default function LeadPoolPage() {
           </div>
         </div>
 
-        {/* Toolbar: Search & Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-[#0c0c0e] border border-[#222] p-3 rounded-2xl">
-          <div className="relative flex-1">
+        {/* Filters Toolbar */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#0c0c0e] border border-[#222] p-3.5 rounded-2xl">
+          {/* Search Input */}
+          <div className="relative flex-1 min-w-[280px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
-              aria-label="Search leads by name, phone, or service" 
+              aria-label="Search enquiries" 
               type="text"
-              placeholder="Search enquiries by customer name, phone, service, or patient details..."
+              placeholder="Search enquiries by customer, phone, patient, service, or agent..."
               className="w-full bg-[#141416] border border-[#222] rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 transition-colors"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <select
-              aria-label="Status filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[#141416] border border-[#222] text-xs text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-orange-500"
-            >
-              <option value="ALL">All Statuses ({leads.length})</option>
-              <option value="NEW">New</option>
-              <option value="CONTACTED">Contacted</option>
-              <option value="QUALIFIED">Qualified</option>
-              <option value="CONVERTED">Converted</option>
-              <option value="FOLLOWUP_REQUIRED">Follow-up Required</option>
-              <option value="LOST">Lost</option>
-            </select>
+          {/* Filter Dropdowns Grid */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Organization Filter */}
+            <div className="flex items-center gap-1.5 bg-[#141416] border border-[#222] px-2.5 py-1 rounded-xl">
+              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Organization filter"
+                value={orgFilter}
+                onChange={(e) => {
+                  setOrgFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL">All Organizations</option>
+                <option value="UEC">UEC</option>
+                <option value="UNCF">UNCF</option>
+                <option value="ACARE">ACare</option>
+              </select>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex items-center gap-1.5 bg-[#141416] border border-[#222] px-2.5 py-1 rounded-xl">
+              <Tag className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Category filter"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL">All Categories</option>
+                <option value="SERVICE_ENQUIRY">Service Enquiry</option>
+                <option value="JOB_ENQUIRY">Job Enquiry</option>
+                <option value="VOLUNTEER_ENQUIRY">Volunteer Enquiry</option>
+                <option value="DONATION_ENQUIRY">Donation Enquiry</option>
+                <option value="AMBULANCE">Ambulance Emergency</option>
+              </select>
+            </div>
+
+            {/* Customer Status Filter */}
+            <div className="flex items-center gap-1.5 bg-[#141416] border border-[#222] px-2.5 py-1 rounded-xl">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Status filter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="NEW">New</option>
+                <option value="CONTACTED">Contacted</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="FOLLOWUP_REQUIRED">Follow-up Required</option>
+                <option value="POSITIVE">Positive</option>
+                <option value="CONVERTED">Converted</option>
+                <option value="CLOSED">Closed / Lost</option>
+              </select>
+            </div>
+
+            {/* Agent Filter */}
+            <div className="flex items-center gap-1.5 bg-[#141416] border border-[#222] px-2.5 py-1 rounded-xl">
+              <UserPlus className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Agent filter"
+                value={agentFilter}
+                onChange={(e) => {
+                  setAgentFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL">All Agents</option>
+                <option value="UNASSIGNED">Unassigned Only</option>
+                <option value="ASSIGNED">Assigned Only</option>
+              </select>
+            </div>
+
+            {/* Sorting */}
+            <div className="flex items-center gap-1.5 bg-[#141416] border border-[#222] px-2.5 py-1 rounded-xl">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Sort by"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="CREATED_DESC">Newest First</option>
+                <option value="CREATED_ASC">Oldest First</option>
+                <option value="NAME_ASC">Name (A-Z)</option>
+                <option value="FOLLOWUP_ASC">Earliest Follow-up</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Primary Lead Data Table — 6 Columns */}
-        <div className="hidden md:block bg-[#0f0f11] border border-[#222] rounded-2xl overflow-hidden shadow-2xl">
-          <table aria-label="Lead Data Table" className="w-full text-left text-xs">
-            <thead className="bg-[#141416] border-b border-[#222] text-slate-400 uppercase font-semibold">
+        {/* 13-Column Redesigned Table View */}
+        <div className="hidden lg:block bg-[#0f0f11] border border-[#222] rounded-2xl overflow-x-auto shadow-2xl custom-scrollbar">
+          <table aria-label="Lead Data Table" className="w-full text-left text-xs whitespace-nowrap min-w-[1550px]">
+            <thead className="bg-[#141416] border-b border-[#222] text-slate-400 uppercase font-semibold text-[10px] tracking-wider sticky top-0 z-10">
               <tr>
-                <th scope="col" className="px-5 py-3.5">Enquiry Name</th>
-                <th scope="col" className="px-5 py-3.5">What Are They Looking For?</th>
-                <th scope="col" className="px-5 py-3.5">Contact</th>
-                <th scope="col" className="px-5 py-3.5">Source</th>
-                <th scope="col" className="px-5 py-3.5">Status</th>
-                <th scope="col" className="px-5 py-3.5 text-right">Actions</th>
+                <th scope="col" className="px-4 py-3.5">1. Enquiry Name</th>
+                <th scope="col" className="px-3.5 py-3.5">2. Organization</th>
+                <th scope="col" className="px-3.5 py-3.5">3. Category</th>
+                <th scope="col" className="px-4 py-3.5">4. Requested Services</th>
+                <th scope="col" className="px-3.5 py-3.5">5. Subcategory</th>
+                <th scope="col" className="px-4 py-3.5">6. Primary Contact</th>
+                <th scope="col" className="px-3.5 py-3.5">7. Secondary Contact</th>
+                <th scope="col" className="px-4 py-3.5">8. Patient Details</th>
+                <th scope="col" className="px-3.5 py-3.5">9. Source</th>
+                <th scope="col" className="px-3.5 py-3.5">10. Assigned Agent</th>
+                <th scope="col" className="px-3.5 py-3.5">11. Customer Status</th>
+                <th scope="col" className="px-4 py-3.5">12. Next Follow-up</th>
+                <th scope="col" className="px-4 py-3.5 text-right sticky right-0 bg-[#141416] shadow-l">13. Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1e1e22]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
-                    <div className="w-6 h-6 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto mb-2" />
-                    Loading structured lead records...
+                  <td colSpan={13} className="px-6 py-20 text-center text-slate-500">
+                    <div className="w-7 h-7 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto mb-2.5" />
+                    <p className="font-semibold text-slate-300">Loading structured lead records...</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Fetching omnichannel inquiries, patient health specs, and calendar follow-ups.</p>
                   </td>
                 </tr>
-              ) : filteredLeads.length === 0 ? (
+              ) : paginatedLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
+                  <td colSpan={13} className="px-6 py-20 text-center text-slate-500">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
                     <p className="font-semibold text-slate-300">No lead records found</p>
-                    <p className="text-[11px] text-slate-500 mt-1">Try clearing your filters or create a new structured enquiry.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Try adjusting your filters or record a new customer enquiry.</p>
                   </td>
                 </tr>
-              ) : filteredLeads.map((lead) => {
-                const serviceLabel = lead.primaryService || lead.serviceInterest || null;
-                const subServices = lead.subServices || [];
-                const summaryText = lead.enquirySummary || (serviceLabel ? `Service: ${serviceLabel}` : 'Details not recorded');
+              ) : (
+                paginatedLeads.map((lead) => {
+                  const serviceLabel = lead.primaryService || lead.serviceInterest || 'General Inquiry';
+                  const subServices = lead.subServices || [];
+                  const followupInfo = formatFollowupDate(lead.followupDate || lead.nextFollowup);
 
-                return (
-                  <tr key={lead.id} className="hover:bg-[#141416]/80 transition-colors group">
-                    {/* Enquiry Name */}
-                    <td className="px-5 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-white text-sm group-hover:text-orange-400 transition-colors">
-                          {lead.customerName || 'Unknown Contact'}
-                        </span>
-                        {lead.patientName && (
-                          <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                            <HeartPulse className="w-3 h-3 text-rose-400" />
-                            Patient: <strong className="text-slate-300">{lead.patientName}</strong>
-                            {lead.patientAge ? ` (${lead.patientAge} yrs)` : ''}
+                  return (
+                    <tr key={lead.id} className="hover:bg-[#141416]/80 transition-colors group">
+                      
+                      {/* 1. Customer / Enquiry Name */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex flex-col">
+                          <span 
+                            onClick={() => handleOpenEditIntake(lead)}
+                            className="font-bold text-white text-xs hover:text-orange-400 transition-colors cursor-pointer truncate max-w-[180px]"
+                            title={lead.customerName || 'Unknown Contact'}
+                          >
+                            {lead.customerName || 'Unknown Contact'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono mt-0.5">
+                            Created: {new Date(lead.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* 2. Organization */}
+                      <td className="px-3.5 py-3.5">
+                        {getOrganizationBadge(lead.foundation || lead.unitName)}
+                      </td>
+
+                      {/* 3. Enquiry Category */}
+                      <td className="px-3.5 py-3.5">
+                        {lead.isAmbulanceEmergency ? (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-bold flex items-center gap-1 animate-pulse">
+                            <ShieldAlert className="w-3 h-3 text-rose-400" /> Ambulance
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs capitalize">
+                            {(lead.enquiryCategory || 'Service Enquiry').replace(/_/g, ' ').toLowerCase()}
                           </span>
                         )}
-                        <span className="text-[10px] text-slate-500 mt-0.5">
-                          Created: {new Date(lead.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* What Are They Looking For? */}
-                    <td className="px-5 py-4 max-w-md">
-                      {summaryText === 'Details not recorded' ? (
-                        <span className="text-slate-500 italic text-xs">Details not recorded</span>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {serviceLabel && (
-                              <span className="px-2.5 py-0.5 rounded-md bg-orange-950/40 text-orange-400 text-[11px] font-semibold border border-orange-500/30">
-                                {serviceLabel}
-                              </span>
-                            )}
-                            {lead.careDurationCategory && (
-                              <span className="px-2 py-0.5 rounded-md bg-purple-950/40 text-purple-300 text-[10px] font-medium border border-purple-500/30">
-                                {lead.careDurationCategory}
-                              </span>
-                            )}
-                            {lead.careSchedule && (
-                              <span className="px-2 py-0.5 rounded-md bg-blue-950/40 text-blue-300 text-[10px] font-medium border border-blue-500/30">
-                                {lead.careSchedule}
-                              </span>
-                            )}
-                          </div>
-
+                      {/* 4. Requested Services */}
+                      <td className="px-4 py-3.5 max-w-[220px]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-md bg-orange-950/40 text-orange-400 text-[11px] font-semibold border border-orange-500/30 truncate max-w-[160px]" title={serviceLabel}>
+                            {serviceLabel}
+                          </span>
                           {subServices.length > 0 && (
-                            <p className="text-[11px] text-slate-300 truncate font-medium">
-                              Req: <span className="text-slate-400">{subServices.join(', ')}</span>
-                            </p>
-                          )}
-
-                          {lead.patientConditions && (
-                            <p className="text-[10px] text-slate-400 truncate">
-                              Cond: {lead.patientConditions}
-                            </p>
+                            <div className="relative group/sub">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-700 cursor-pointer">
+                                +{subServices.length}
+                              </span>
+                              <div className="absolute left-0 bottom-full mb-1 hidden group-hover/sub:block z-30 p-2 bg-[#18181b] border border-[#333] rounded-xl shadow-2xl text-[10px] text-slate-200 min-w-[160px] whitespace-normal">
+                                <div className="font-bold text-orange-400 mb-1">Additional Requirements:</div>
+                                <ul className="list-disc pl-3 space-y-0.5">
+                                  {subServices.map((sub: string, i: number) => (
+                                    <li key={i}>{sub}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
                           )}
                         </div>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Contact */}
-                    <td className="px-5 py-4 font-mono">
-                      <div className="flex flex-col">
-                        <span className="text-slate-200 font-semibold">{lead.phoneNumber}</span>
-                        {lead.email && <span className="text-[10px] text-slate-500">{lead.email}</span>}
-                        {lead.cityDistrict && (
-                          <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-2.5 h-2.5" /> {lead.cityDistrict}
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                      {/* 5. Subcategory */}
+                      <td className="px-3.5 py-3.5">
+                        <span className="text-slate-400 text-xs">
+                          {lead.careDurationCategory || lead.careDuration || lead.engagementType || 'Standard'}
+                        </span>
+                      </td>
 
-                    {/* Source */}
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-1.5">
-                        {getSourceIcon(lead.source)}
-                        <span className="text-xs text-slate-300">{lead.source || 'Website'}</span>
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-5 py-4">
-                      {getStatusBadge(lead.status)}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* View/Edit Structured Intake */}
-                        <button
-                          onClick={() => handleOpenEditIntake(lead)}
-                          className="p-1.5 rounded-lg bg-[#18181b] hover:bg-[#222] text-slate-300 hover:text-white border border-[#2a2a2d] hover:border-orange-500/40 transition-colors"
-                          title="View / Edit Enquiry Details"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-orange-400" />
-                        </button>
-
-                        {/* Customer History Drawer */}
-                        <button
-                          onClick={() => handleOpenCustomerHistory(lead.phoneNumber)}
-                          className="p-1.5 rounded-lg bg-[#18181b] hover:bg-[#222] text-slate-300 hover:text-white border border-[#2a2a2d] hover:border-blue-500/40 transition-colors"
-                          title="Customer Call History & Messaging Timeline"
-                        >
-                          <History className="w-3.5 h-3.5 text-blue-400" />
-                        </button>
-
-                        {/* Call / Claim */}
-                        {lead.status === 'NEW' ? (
-                          <button
-                            onClick={() => handleClaim(lead.id)}
-                            className="px-2.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm shadow-orange-600/20"
-                            title="Claim and Call"
-                          >
-                            <Phone className="w-3 h-3" />
-                            Claim
-                          </button>
-                        ) : (
+                      {/* 6. Primary Contact */}
+                      <td className="px-4 py-3.5 font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-200 font-semibold text-xs">{lead.phoneNumber}</span>
+                          {lead.whatsappStatus === 'VERIFIED' && (
+                            <span title="Verified WhatsApp Number">
+                              <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            </span>
+                          )}
                           <button
                             onClick={() => handleCallLead(lead)}
-                            className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-colors"
-                            title="Call Lead"
+                            className="p-1 rounded bg-[#18181b] hover:bg-orange-600/20 text-slate-400 hover:text-orange-400 transition-colors ml-1"
+                            title="Direct Dial"
                           >
-                            <Phone className="w-3.5 h-3.5" />
+                            <Phone className="w-3 h-3" />
                           </button>
+                        </div>
+                      </td>
+
+                      {/* 7. Secondary Contact */}
+                      <td className="px-3.5 py-3.5 font-mono text-slate-400 text-xs">
+                        {lead.secondaryPhone ? (
+                          <span>{lead.secondaryCountryCode || ''} {lead.secondaryPhone}</span>
+                        ) : (
+                          <span className="text-slate-600">—</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+
+                      {/* 8. Patient Details */}
+                      <td className="px-4 py-3.5 max-w-[200px]">
+                        {lead.patientName ? (
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-200 text-xs flex items-center gap-1 truncate">
+                              <HeartPulse className="w-3 h-3 text-rose-400 shrink-0" />
+                              {lead.patientName}
+                            </span>
+                            <span className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                              {lead.patientAge ? <span>{lead.patientAge} yrs</span> : null}
+                              {lead.patientWeight ? (
+                                <span className="flex items-center gap-0.5 text-cyan-400">
+                                  <Scale className="w-2.5 h-2.5" />
+                                  {lead.patientWeight} {lead.patientWeightUnit || 'kg'}
+                                </span>
+                              ) : null}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+
+                      {/* 9. Source */}
+                      <td className="px-3.5 py-3.5">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                          {getSourceIcon(lead.source)}
+                          <span className="truncate max-w-[110px]" title={lead.source || 'Website'}>
+                            {lead.source || 'Website'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* 10. Assigned Agent */}
+                      <td className="px-3.5 py-3.5">
+                        {lead.agentName && lead.agentName !== 'Unassigned' ? (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded-full bg-orange-600/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-[10px] font-bold">
+                              {lead.agentName.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-xs text-slate-200 font-medium truncate max-w-[100px]" title={lead.agentName}>
+                              {lead.agentName}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-semibold border border-slate-700">
+                            Unassigned
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 11. Customer Status */}
+                      <td className="px-3.5 py-3.5">
+                        {getStatusBadge(lead.status, lead.customerDisposition)}
+                      </td>
+
+                      {/* 12. Next Follow-up */}
+                      <td className="px-4 py-3.5">
+                        {followupInfo ? (
+                          <div className="flex flex-col">
+                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold inline-flex items-center gap-1 w-fit ${followupInfo.color}`}>
+                              <Calendar className="w-2.5 h-2.5" />
+                              {followupInfo.badge}
+                            </span>
+                            <span className="text-[10px] text-slate-300 mt-0.5 font-mono">
+                              {followupInfo.label}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+
+                      {/* 13. Actions */}
+                      <td className="px-4 py-3.5 text-right sticky right-0 bg-[#0f0f11] shadow-l">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* View/Edit Structured Intake */}
+                          <button
+                            onClick={() => handleOpenEditIntake(lead)}
+                            className="p-1.5 rounded-lg bg-[#18181b] hover:bg-[#222] text-slate-300 hover:text-white border border-[#2a2a2d] hover:border-orange-500/40 transition-colors"
+                            title="View / Edit Enquiry Details"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-orange-400" />
+                          </button>
+
+                          {/* Customer History Drawer */}
+                          <button
+                            onClick={() => handleOpenCustomerHistory(lead.phoneNumber)}
+                            className="p-1.5 rounded-lg bg-[#18181b] hover:bg-[#222] text-slate-300 hover:text-white border border-[#2a2a2d] hover:border-blue-500/40 transition-colors"
+                            title="Customer Call History & Messaging Timeline"
+                          >
+                            <History className="w-3.5 h-3.5 text-blue-400" />
+                          </button>
+
+                          {/* Call / Claim */}
+                          {lead.status === 'NEW' ? (
+                            <button
+                              onClick={() => handleClaim(lead.id)}
+                              className="px-2.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm shadow-orange-600/20"
+                              title="Claim and Call"
+                            >
+                              <Phone className="w-3 h-3" />
+                              Claim
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleCallLead(lead)}
+                              className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition-colors"
+                              title="Call Lead"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Mobile Cards View */}
-        <div className="block md:hidden space-y-3">
+        {/* Pagination Toolbar */}
+        {totalLeads > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 border-t border-[#222] text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span>Showing <strong>{Math.min(totalLeads, (currentPage - 1) * pageSize + 1)}</strong> to <strong>{Math.min(totalLeads, currentPage * pageSize)}</strong> of <strong>{totalLeads}</strong> enquiries</span>
+              <span className="text-slate-600">•</span>
+              <select
+                aria-label="Records per page"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-[#141416] border border-[#222] rounded-lg px-2 py-1 text-slate-300 outline-none"
+              >
+                <option value={10}>10 per page</option>
+                <option value={15}>15 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                className="p-1.5 rounded-lg bg-[#141416] border border-[#222] text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-3 py-1 font-mono text-white">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                className="p-1.5 rounded-lg bg-[#141416] border border-[#222] text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next Page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Cards View (Responsive) */}
+        <div className="block lg:hidden space-y-3">
           {isLoading ? (
             <div className="text-center py-12 bg-[#111] border border-[#222] rounded-2xl text-slate-500">
-              <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
               <p className="text-xs">Loading leads...</p>
             </div>
-          ) : filteredLeads.length === 0 ? (
+          ) : paginatedLeads.length === 0 ? (
             <div className="text-center py-12 bg-[#111] border border-[#222] rounded-2xl text-slate-500">
               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="font-semibold text-slate-300">No leads found</p>
             </div>
           ) : (
-            filteredLeads.map((lead) => (
-              <div key={lead.id} className="bg-[#0f0f11] border border-[#222] rounded-2xl p-4 space-y-3">
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <h3 className="font-bold text-sm text-white">{lead.customerName}</h3>
-                    <p className="font-mono text-xs text-slate-400">{lead.phoneNumber}</p>
-                    {lead.patientName && (
-                      <p className="text-[11px] text-rose-400 mt-0.5">Patient: {lead.patientName}</p>
+            paginatedLeads.map((lead) => {
+              const followupInfo = formatFollowupDate(lead.followupDate || lead.nextFollowup);
+              return (
+                <div key={lead.id} className="bg-[#0f0f11] border border-[#222] rounded-2xl p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-white">{lead.customerName}</h3>
+                        {getOrganizationBadge(lead.foundation || lead.unitName)}
+                      </div>
+                      <p className="font-mono text-xs text-slate-400 mt-0.5">{lead.phoneNumber}</p>
+                      {lead.patientName && (
+                        <p className="text-[11px] text-rose-400 mt-0.5 flex items-center gap-1">
+                          <HeartPulse className="w-3 h-3" /> Patient: {lead.patientName} {lead.patientWeight ? `(${lead.patientWeight} ${lead.patientWeightUnit || 'kg'})` : ''}
+                        </p>
+                      )}
+                    </div>
+                    <div>{getStatusBadge(lead.status, lead.customerDisposition)}</div>
+                  </div>
+
+                  <div className="bg-[#141416] p-2.5 rounded-xl border border-[#222] text-[11px] space-y-1">
+                    <div className="flex justify-between items-center text-slate-400">
+                      <span className="font-semibold text-orange-400">{lead.primaryService || lead.serviceInterest || 'General Inquiry'}</span>
+                      <span className="text-[10px]">{lead.careDurationCategory || lead.careDuration || ''}</span>
+                    </div>
+                    {lead.subServices && lead.subServices.length > 0 && (
+                      <p className="text-[10px] text-slate-400 truncate">
+                        Requirements: {lead.subServices.join(', ')}
+                      </p>
                     )}
                   </div>
-                  <div>{getStatusBadge(lead.status)}</div>
-                </div>
 
-                <div className="bg-[#141416] p-2.5 rounded-xl border border-[#222] text-[11px] space-y-1">
-                  <span className="text-slate-500 font-semibold block uppercase tracking-wider text-[10px]">
-                    What Are They Looking For?
-                  </span>
-                  <p className="text-slate-200">
-                    {lead.enquirySummary || lead.primaryService || 'Details not recorded'}
-                  </p>
-                </div>
+                  {followupInfo && (
+                    <div className="flex items-center justify-between text-[11px] bg-[#121820] p-2 rounded-xl border border-[#1e2a38]">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-orange-400" /> Next Follow-up:
+                      </span>
+                      <span className={`px-2 py-0.2 rounded font-bold ${followupInfo.color}`}>
+                        {followupInfo.label}
+                      </span>
+                    </div>
+                  )}
 
-                <div className="flex items-center justify-between pt-2 border-t border-[#1e1e22]">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                    {getSourceIcon(lead.source)}
-                    <span>{lead.source || 'Website'}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-[#1e1e22]">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                      {getSourceIcon(lead.source)}
+                      <span className="text-[11px]">{lead.source || 'Website'}</span>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-[11px]">{lead.agentName || 'Unassigned'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditIntake(lead)}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181b] border border-[#333] hover:border-orange-500/40 text-xs text-slate-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleCallLead(lead)}
+                        className="px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Phone className="w-3 h-3" /> Call
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleOpenEditIntake(lead)}
-                      className="px-2.5 py-1 rounded-lg bg-[#18181b] border border-[#333] hover:border-orange-500/40 text-xs text-slate-200"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleCallLead(lead)}
-                      className="px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold flex items-center gap-1"
-                    >
-                      <Phone className="w-3 h-3" /> Call
-                    </button>
-                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

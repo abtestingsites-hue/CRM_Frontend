@@ -21,19 +21,45 @@ interface Lead {
   subServices?: string[];
   patientName?: string | null;
   patientAge?: number | null;
+  patientWeight?: number | null;
+  patientWeightUnit?: string | null;
   patientConditions?: string | null;
   patientMobility?: string | null;
   engagementType?: string | null;
   careDurationCategory?: string | null;
   careDuration?: string | null;
   careSchedule?: string | null;
+  secondaryPhone?: string | null;
+  secondaryCountryCode?: string | null;
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   serviceAddress?: string | null;
   cityDistrict?: string | null;
   postalCode?: string | null;
+  whatsappStatus?: string | null;
+  whatsappVerifiedAt?: string | null;
   notes?: string | null;
   isAmbulanceEmergency?: boolean;
   enquirySummary?: string | null;
   lastCall?: any;
+  // Phase 27 Agent Feedback & Disposition
+  interestLevel?: string | null;
+  customerDisposition?: string | null;
+  agentFeedback?: string | null;
+  nextAction?: string | null;
+  followupDate?: string | null;
+  followupTime?: string | null;
+  followupType?: string | null;
+  followupNotes?: string | null;
+  feedbackAgentId?: string | null;
+  feedbackAgentName?: string | null;
+  feedbackSubmittedAt?: string | null;
+  unit?: { id: string; name: string; code?: string } | null;
+  unitName?: string | null;
+  assignedAgent?: { id: string; name: string; agentCode?: string } | null;
+  nextAppointment?: any;
 }
 
 interface LeadStore {
