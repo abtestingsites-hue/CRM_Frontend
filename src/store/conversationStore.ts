@@ -402,3 +402,9 @@ export const useConversationStore = create<ConversationState>((set, get) => ({
     };
   }),
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('crm-unit-changed', () => {
+    useConversationStore.getState().fetchConversations();
+  });
+}

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
+import { useUnitStore } from '@/store/useUnitStore';
+import { Globe, 
   BarChart3, PieChart, LineChart, Download, Calendar, Users, Briefcase, 
   FileSpreadsheet, Plus, Table, Play, Settings, Clock, Sparkles, Send, 
   ChevronRight, ArrowUpRight, ArrowDownRight, Printer, Mail, CalendarDays, Sliders
@@ -22,6 +23,7 @@ interface ReportConfig {
 }
 
 export default function ReportsPage() {
+  const { selectedUnit, selectedUnitId } = useUnitStore();
   const [activeCategory, setActiveCategory] = useState<'client' | 'agent' | 'omnichannel' | 'conversion'>('client');
   const [selectedReportId, setSelectedReportId] = useState('cx_summary');
   
@@ -98,7 +100,21 @@ export default function ReportsPage() {
 
   useEffect(() => {
     handleGenerateReport();
-  }, [selectedReportId]);
+  }, [selectedReportId, selectedUnitId]);
+
+  useEffect(() => {
+    const handleUnitChanged = () => {
+      handleGenerateReport();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('crm-unit-changed', handleUnitChanged);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('crm-unit-changed', handleUnitChanged);
+      }
+    };
+  }, []);
 
   const handleGenerateReport = () => {
     // Generate simulated dynamic payload matching selected options
@@ -339,10 +355,12 @@ export default function ReportsPage() {
   };
 
   const handleExportCSV = () => {
-    if (!generatedData) return;
-    const headers = Object.keys(generatedData.tableData[0]).join(',');
+    if (!generatedData || !generatedData.tableData || generatedData.tableData.length === 0) return;
+    const activeUnitLabel = selectedUnit ? `${selectedUnit.code} - ${selectedUnit.name}` : 'All Units (Consolidated)';
+    const rawKeys = Object.keys(generatedData.tableData[0]);
+    const headers = ['Business Unit', ...rawKeys].join(',');
     const rows = generatedData.tableData.map(row => 
-      Object.values(row).map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')
+      [`"${activeUnitLabel}"`, ...rawKeys.map(k => `"${String(row[k] || '').replace(/"/g, '""')}"`)].join(',')
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join('\n');
     const encodedUri = encodeURI(csvContent);

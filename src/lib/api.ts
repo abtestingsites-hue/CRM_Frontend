@@ -121,6 +121,13 @@ class APIClient {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
+    if (typeof window !== 'undefined' && !headers.has('x-crm-unit-id')) {
+      const activeUnit = localStorage.getItem('crm_global_selected_unit');
+      if (activeUnit && activeUnit !== 'ALL') {
+        headers.set('x-crm-unit-id', activeUnit);
+      }
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
 
