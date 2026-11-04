@@ -486,16 +486,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     useCallStore.getState().fetchDashboardCalls();
     setSocket(socketInstance);
 
-    // Isolated HTTP Presence Polling (kept strictly separate from socket creation)
+    // Isolated HTTP Presence Polling (standardized agent identifier & resilient error handling)
+    let isPolling = false;
     const pollInterval = setInterval(async () => {
+      if (isPolling) return; // Prevent concurrent in-flight overlap
       const { status, incomingCall, setIncomingCall } = useCallStore.getState();
       const token = getStoredToken();
       if (!token) return;
-      if (status === 'AVAILABLE' && !incomingCall && user?.id) {
+      
+      const canonicalAgentId = user?.agentId || user?.id;
+      if (status === 'AVAILABLE' && !incomingCall && canonicalAgentId) {
+        isPolling = true;
         try {
           let baseUrl = process.env.NEXT_PUBLIC_API_URL || `${API_BASE_URL}`;
           if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-          const apiUrl = `${baseUrl}/telephony/my-ringing-call?agentId=${user.id}`;
+          const apiUrl = `${baseUrl}/telephony/my-ringing-call?agentId=${encodeURIComponent(canonicalAgentId)}`;
 
           const res = await apiFetch(apiUrl);
           if (res.ok) {
@@ -519,9 +524,18 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
               console.log('Polling found incoming call:', data.call);
               setIncomingCall(data.call);
             }
+          } else if (res.status === 401 || res.status === 403) {
+            console.warn(`[POLLING] Telephony presence returned status ${res.status}. Session validation pending.`);
+          } else if (res.status === 429) {
+            console.warn('[POLLING] Telephony rate limited (429), will retry on next cadence.');
+          } else {
+            console.warn(`[POLLING] Non-200 response from telephony polling (${res.status})`);
           }
         } catch (e) {
-          console.warn('[UI Polling Exception Swallowed]:', e);
+          // Network errors or CORS issues must be logged without clearing active state
+          console.warn('[POLLING] Telephony polling network/CORS error:', e);
+        } finally {
+          isPolling = false;
         }
       }
     }, 5000);
