@@ -54,7 +54,7 @@ export const useUnitStore = create<UnitState>((set, get) => ({
     const saved = localStorage.getItem('crm_global_selected_unit');
     const effective = (saved && saved !== 'ALL') ? saved : null;
     const currentUnits = get().units;
-    const resolved = effective ? currentUnits.find(u => u.id === effective || u.code === effective) || null : null;
+    const resolved = effective ? currentUnits.find(u => (u.id === effective || u.code === effective) && u.status !== 'INACTIVE') || null : null;
     set({ selectedUnitId: effective, selectedUnit: resolved });
     get().fetchUnits();
   },
@@ -78,7 +78,11 @@ export const useUnitStore = create<UnitState>((set, get) => ({
             status: u.status,
           }));
           const currentId = get().selectedUnitId;
-          const resolved = currentId ? mapped.find(u => u.id === currentId || u.code === currentId) || null : null;
+          const resolved = currentId ? mapped.find(u => (u.id === currentId || u.code === currentId) && u.status !== 'INACTIVE') || null : null;
+          if (currentId && !resolved) {
+            if (typeof window !== 'undefined') localStorage.removeItem('crm_global_selected_unit');
+            set({ selectedUnitId: null });
+          }
           set({ units: mapped, selectedUnit: resolved, isLoading: false });
           return;
         }
@@ -91,7 +95,7 @@ export const useUnitStore = create<UnitState>((set, get) => ({
     const isAll = !unitId || unitId === 'ALL';
     const effectiveId = isAll ? null : unitId;
     const units = get().units;
-    const unitObj = effectiveId ? units.find(u => u.id === effectiveId || u.code === effectiveId) || null : null;
+    const unitObj = effectiveId ? units.find(u => (u.id === effectiveId || u.code === effectiveId) && u.status !== 'INACTIVE') || null : null;
 
     if (typeof window !== 'undefined') {
       if (effectiveId) {
@@ -111,4 +115,3 @@ export const useUnitStore = create<UnitState>((set, get) => ({
     set({ selectedUnitId: effectiveId, selectedUnit: unitObj });
   },
 }));
-

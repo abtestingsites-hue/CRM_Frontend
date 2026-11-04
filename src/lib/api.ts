@@ -164,10 +164,20 @@ class APIClient {
       throw error;
     }
   }
+  private async handleResponseError(res: Response): Promise<never> {
+    let errPayload: any = null;
+    try {
+      errPayload = await res.json();
+    } catch (_) {}
+    const errMsg = errPayload?.message || errPayload?.error || `HTTP Error ${res.status}`;
+    const err = new Error(errMsg);
+    (err as any).response = { status: res.status, data: errPayload };
+    throw err;
+  }
 
   async get<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
     const res = await this.request(endpoint, { ...options, method: 'GET' });
-    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    if (!res.ok) await this.handleResponseError(res);
     return res.json();
   }
 
@@ -177,7 +187,7 @@ class APIClient {
       method: 'POST', 
       body: body instanceof FormData ? body : JSON.stringify(body) 
     });
-    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    if (!res.ok) await this.handleResponseError(res);
     return res.json();
   }
 
@@ -187,13 +197,13 @@ class APIClient {
       method: 'PATCH', 
       body: body instanceof FormData ? body : JSON.stringify(body) 
     });
-    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    if (!res.ok) await this.handleResponseError(res);
     return res.json();
   }
 
   async delete<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
     const res = await this.request(endpoint, { ...options, method: 'DELETE' });
-    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    if (!res.ok) await this.handleResponseError(res);
     return res.json();
   }
 }

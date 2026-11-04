@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Building2, ChevronDown, Check, Globe2, Shield } from 'lucide-react';
+import { Building2, ChevronDown, Check, Globe2, Shield, FlaskConical } from 'lucide-react';
 import { useUnitStore, BusinessUnit } from '@/store/useUnitStore';
 
 export function GlobalUnitSwitcher() {
@@ -45,9 +45,67 @@ export function GlobalUnitSwitcher() {
       case 'ACARE':
       case 'AMBULANCE':
         return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      default:
+      case 'IN_HOME':
+      case 'HOME_CARE':
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+      default:
+        return 'bg-slate-500/10 text-slate-400 border-slate-500/30';
     }
+  };
+
+  // Filter out soft-deleted units
+  const validUnits = units.filter((u) => u.status !== 'DELETED');
+  const productionUnits = validUnits.filter((u) => !u.code.startsWith('TEST_') && !u.name.toLowerCase().includes('test'));
+  const testUnits = validUnits.filter((u) => u.code.startsWith('TEST_') || u.name.toLowerCase().includes('test'));
+
+  const renderUnitItem = (unit: BusinessUnit, isTestUnit = false) => {
+    const isSelected = selectedUnit?.id === unit.id || selectedUnit?.code === unit.code;
+    const isInactive = unit.status === 'INACTIVE';
+    const badgeColor = isTestUnit
+      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+      : getUnitBadgeColor(unit.code);
+
+    return (
+      <button
+        key={unit.id}
+        type="button"
+        disabled={isInactive}
+        onClick={() => {
+          if (isInactive) return;
+          setSelectedUnitId(unit.code || unit.id);
+          setIsOpen(false);
+        }}
+        title={isInactive ? 'Inactive business unit cannot be selected as operational context' : undefined}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all ${
+          isInactive
+            ? 'opacity-40 cursor-not-allowed bg-[#0d0d0d]'
+            : isSelected
+            ? 'bg-primary/15 border border-primary/40 text-white font-semibold'
+            : 'hover:bg-[#161616] text-slate-300 border border-transparent'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-[#1a1a1a] text-slate-300 border border-[#2a2a2a]">
+            {isTestUnit ? <FlaskConical className="w-3.5 h-3.5 text-amber-400" /> : <Building2 className="w-3.5 h-3.5" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold">{unit.code}</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded border font-medium ${badgeColor}`}>
+                {isTestUnit ? 'TEST' : (unit.status || 'ACTIVE')}
+              </span>
+              {isInactive && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded border bg-red-500/10 text-red-400 border-red-500/30 font-medium">
+                  INACTIVE
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 truncate max-w-[170px]">{unit.name}</p>
+          </div>
+        </div>
+        {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+      </button>
+    );
   };
 
   return (
@@ -86,7 +144,7 @@ export function GlobalUnitSwitcher() {
               <Shield className="w-3.5 h-3.5 text-primary" />
               <span>Global Unit Context</span>
             </div>
-            <span className="text-[10px] text-slate-500 font-mono">{units.length} units available</span>
+            <span className="text-[10px] text-slate-500 font-mono">{validUnits.length} units available</span>
           </div>
 
           <div className="p-1.5 max-h-80 overflow-y-auto space-y-1">
@@ -119,47 +177,26 @@ export function GlobalUnitSwitcher() {
 
             <div className="my-1 border-t border-[#1c1c1c]" />
 
-            {/* Individual Units */}
-            {units.map((unit) => {
-              const isSelected = selectedUnit?.id === unit.id || selectedUnit?.code === unit.code;
-              const badgeColor = getUnitBadgeColor(unit.code);
+            {/* Production Units */}
+            <div className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              Production Units
+            </div>
+            {productionUnits.map((u) => renderUnitItem(u, false))}
 
-              return (
-                <button
-                  key={unit.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUnitId(unit.code || unit.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all ${
-                    isSelected
-                      ? 'bg-primary/15 border border-primary/40 text-white font-semibold'
-                      : 'hover:bg-[#161616] text-slate-300 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg bg-[#1a1a1a] text-slate-300 border border-[#2a2a2a]">
-                      <Building2 className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold">{unit.code}</span>
-                        <span className={`text-[9px] px-1.5 py-0.2 rounded border font-medium ${badgeColor}`}>
-                          {unit.status || 'ACTIVE'}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-400 truncate max-w-[170px]">{unit.name}</p>
-                    </div>
-                  </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                </button>
-              );
-            })}
+            {/* Test / Staging Units (Distinguishable from Production) */}
+            {testUnits.length > 0 && (
+              <>
+                <div className="my-1 border-t border-[#1c1c1c]" />
+                <div className="px-2 py-1 text-[10px] font-bold text-amber-500/70 uppercase tracking-wider flex items-center gap-1">
+                  <FlaskConical className="w-3 h-3 text-amber-400" />
+                  <span>Staging & Test Units</span>
+                </div>
+                {testUnits.map((u) => renderUnitItem(u, true))}
+              </>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
