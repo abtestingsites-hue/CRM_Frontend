@@ -148,6 +148,19 @@ export function CallIntakeFormModal({
   const [patientConditions, setPatientConditions] = useState('');
   const [patientMobility, setPatientMobility] = useState('Needs Partial Assistance (Walker / Cane)');
 
+  // Dynamic Fields for Job Enquiry / Careers
+  const [jobRoleApplied, setJobRoleApplied] = useState('Staff Nurse');
+  const [jobExperienceYears, setJobExperienceYears] = useState('1-3 years');
+  const [jobHighestQualification, setJobHighestQualification] = useState('B.Sc Nursing / GNM');
+  const [jobCurrentEmployer, setJobCurrentEmployer] = useState('');
+  const [jobExpectedSalary, setJobExpectedSalary] = useState('');
+  const [jobNoticePeriod, setJobNoticePeriod] = useState('Immediate / 15 days');
+
+  // Dynamic Fields for Volunteer / Donor / Other Enquiries
+  const [donorCauseInterest, setDonorCauseInterest] = useState('Elderly Medical Care & Bed Fund');
+  const [donationFrequency, setDonationFrequency] = useState('ONE_TIME');
+  const [volunteerAreas, setVolunteerAreas] = useState('Companion Care & Recreation');
+
   // Duration & Schedule
   const [engagementType, setEngagementType] = useState('Regular Daily Care');
   const [careDurationCategory, setCareDurationCategory] = useState('SHORT_TERM');
@@ -414,6 +427,15 @@ export function CallIntakeFormModal({
           if (draft.patientWeightUnit) setPatientWeightUnit(draft.patientWeightUnit);
           if (draft.patientConditions) setPatientConditions(draft.patientConditions);
           if (draft.patientMobility) setPatientMobility(draft.patientMobility);
+          if (draft.jobRoleApplied) setJobRoleApplied(draft.jobRoleApplied);
+          if (draft.jobExperienceYears) setJobExperienceYears(draft.jobExperienceYears);
+          if (draft.jobHighestQualification) setJobHighestQualification(draft.jobHighestQualification);
+          if (draft.jobCurrentEmployer) setJobCurrentEmployer(draft.jobCurrentEmployer);
+          if (draft.jobExpectedSalary) setJobExpectedSalary(draft.jobExpectedSalary);
+          if (draft.jobNoticePeriod) setJobNoticePeriod(draft.jobNoticePeriod);
+          if (draft.donorCauseInterest) setDonorCauseInterest(draft.donorCauseInterest);
+          if (draft.donationFrequency) setDonationFrequency(draft.donationFrequency);
+          if (draft.volunteerAreas) setVolunteerAreas(draft.volunteerAreas);
           if (draft.engagementType) setEngagementType(draft.engagementType);
           if (draft.careDurationCategory) setCareDurationCategory(draft.careDurationCategory);
           if (draft.careDuration) setCareDuration(draft.careDuration);
@@ -594,6 +616,15 @@ export function CallIntakeFormModal({
         patientWeightUnit,
         patientConditions,
         patientMobility,
+        jobRoleApplied,
+        jobExperienceYears,
+        jobHighestQualification,
+        jobCurrentEmployer,
+        jobExpectedSalary,
+        jobNoticePeriod,
+        donorCauseInterest,
+        donationFrequency,
+        volunteerAreas,
         engagementType,
         careDurationCategory,
         careDuration,
@@ -655,6 +686,8 @@ export function CallIntakeFormModal({
     enquirerName, primaryCountryCode, phone, secondaryCountryCode, secondaryPhone, email,
     selectedOrganization, enquiryCategory, selectedSubcategory, primaryService, selectedSubServices,
     patientName, patientAge, patientWeight, patientWeightUnit, patientConditions, patientMobility,
+    jobRoleApplied, jobExperienceYears, jobHighestQualification, jobCurrentEmployer, jobExpectedSalary, jobNoticePeriod,
+    donorCauseInterest, donationFrequency, volunteerAreas,
     engagementType, careDurationCategory, careDuration, careSchedule,
     street, city, state, country, postalCode, pickupLocation, destinationLocation,
     liveNotesText, callOutcome, followupDate, effectiveSessionId, callSid, whatsappStatus,
@@ -722,6 +755,15 @@ export function CallIntakeFormModal({
       patientWeightUnit,
       patientConditions: patientConditions || undefined,
       patientMobility,
+      jobRoleApplied: enquiryCategory === 'JOB_ENQUIRY' ? jobRoleApplied : undefined,
+      jobExperienceYears: enquiryCategory === 'JOB_ENQUIRY' ? jobExperienceYears : undefined,
+      jobHighestQualification: enquiryCategory === 'JOB_ENQUIRY' ? jobHighestQualification : undefined,
+      jobCurrentEmployer: enquiryCategory === 'JOB_ENQUIRY' ? jobCurrentEmployer : undefined,
+      jobExpectedSalary: enquiryCategory === 'JOB_ENQUIRY' ? jobExpectedSalary : undefined,
+      jobNoticePeriod: enquiryCategory === 'JOB_ENQUIRY' ? jobNoticePeriod : undefined,
+      donorCauseInterest: enquiryCategory === 'DONOR_ENQUIRY' ? donorCauseInterest : undefined,
+      donationFrequency: enquiryCategory === 'DONOR_ENQUIRY' ? donationFrequency : undefined,
+      volunteerAreas: enquiryCategory === 'VOLUNTEER_ENQUIRY' ? volunteerAreas : undefined,
       engagementType,
       careDurationCategory,
       careDuration,
@@ -1336,165 +1378,389 @@ export function CallIntakeFormModal({
           </div>
         </div>
 
-        {/* 3. PATIENT / CLIENT DETAILS & WEIGHT INTELLIGENCE (Section C) */}
-        <div className="space-y-3">
-          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1b2631] pb-1">
-            3. Patient / Client Details & Clinical Weight
-          </h4>
+        {/* 3. DYNAMIC DETAILS: ADAPTS TO ENQUIRY CATEGORY (SERVICE / JOB / DONOR / VOLUNTEER) */}
+        {enquiryCategory === 'JOB_ENQUIRY' ? (
+          <div className="space-y-3 p-3.5 bg-sky-950/20 border border-sky-500/30 rounded-xl">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-sky-400 border-b border-sky-500/20 pb-1 flex items-center justify-between">
+              <span>3. Applicant & Employment Profile (Careers)</span>
+              <span className="text-[10px] text-sky-300 normal-case font-normal">Candidate Application Intake</span>
+            </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="md:col-span-2">
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Patient Full Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Meenakshi Ammal"
-                value={patientName}
-                onChange={(e) => {
-                  setPatientName(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Age</label>
-              <input
-                type="number"
-                placeholder="e.g. 74"
-                value={patientAge}
-                onChange={(e) => {
-                  setPatientAge(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
-              />
-            </div>
-
-            {/* Patient Weight with kg / lb unit selector (Requirement C.1-5) */}
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1 flex items-center justify-between">
-                <span>Weight</span>
-                <span className="text-[9px] text-slate-500">Unit: {patientWeightUnit}</span>
-              </label>
-              <div className="flex gap-1.5">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="700"
-                  placeholder="e.g. 68.5"
-                  value={patientWeight}
-                  onChange={(e) => {
-                    setPatientWeight(e.target.value);
-                    userHasEditedRef.current = true;
-                  }}
-                  className="flex-1 min-w-0 bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-orange-500"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Designation / Role Applied For <span className="text-orange-500">*</span>
+                </label>
                 <select
-                  value={patientWeightUnit}
+                  value={jobRoleApplied}
                   onChange={(e) => {
-                    setPatientWeightUnit(e.target.value as 'kg' | 'lb');
+                    setJobRoleApplied(e.target.value);
                     userHasEditedRef.current = true;
                   }}
-                  className="w-16 bg-[#121b24] border border-[#233342] rounded-lg px-1.5 py-1.5 text-xs text-slate-200 font-bold outline-none focus:border-orange-500 shrink-0"
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
                 >
-                  <option value="kg">kg</option>
-                  <option value="lb">lb</option>
+                  <option value="Staff Nurse (B.Sc / GNM)">Staff Nurse (B.Sc / GNM)</option>
+                  <option value="General Duty Assistant (GDA)">General Duty Assistant (GDA)</option>
+                  <option value="Home Care Nurse / Attendant">Home Care Nurse / Attendant</option>
+                  <option value="Physiotherapist">Physiotherapist</option>
+                  <option value="Occupational Therapist">Occupational Therapist</option>
+                  <option value="Telecaller / Customer Support Executive">Telecaller / Customer Support Executive</option>
+                  <option value="Operations / Admin Executive">Operations / Admin Executive</option>
+                  <option value="Ambulance Driver / EMT">Ambulance Driver / EMT</option>
+                  <option value="Other Healthcare Professional">Other Healthcare Professional</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Total Relevant Experience
+                </label>
+                <select
+                  value={jobExperienceYears}
+                  onChange={(e) => {
+                    setJobExperienceYears(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="Fresher / Less than 1 year">Fresher / Less than 1 year</option>
+                  <option value="1-3 years">1-3 years</option>
+                  <option value="3-5 years">3-5 years</option>
+                  <option value="5-8 years">5-8 years</option>
+                  <option value="8+ years">8+ years</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Highest Qualification
+                </label>
+                <select
+                  value={jobHighestQualification}
+                  onChange={(e) => {
+                    setJobHighestQualification(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="ANM / GNM Nursing">ANM / GNM Nursing</option>
+                  <option value="B.Sc / Post Basic B.Sc Nursing">B.Sc / Post Basic B.Sc Nursing</option>
+                  <option value="M.Sc Nursing">M.Sc Nursing</option>
+                  <option value="BPT / MPT (Physiotherapy)">BPT / MPT (Physiotherapy)</option>
+                  <option value="Diploma in Emergency Medical Care">Diploma in Emergency Medical Care</option>
+                  <option value="Graduation / Degree (Any Stream)">Graduation / Degree (Any Stream)</option>
+                  <option value="10th / 12th Standard">10th / 12th Standard</option>
+                  <option value="Other Certificate Course">Other Certificate Course</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Current / Previous Employer
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Apollo Hospitals / Private Clinic"
+                  value={jobCurrentEmployer}
+                  onChange={(e) => {
+                    setJobCurrentEmployer(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Expected Monthly Salary
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 25,000 - 30,000 / month"
+                  value={jobExpectedSalary}
+                  onChange={(e) => {
+                    setJobExpectedSalary(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Notice Period / Availability
+                </label>
+                <select
+                  value={jobNoticePeriod}
+                  onChange={(e) => {
+                    setJobNoticePeriod(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="Immediate / 15 days">Immediate / 15 days</option>
+                  <option value="1 Month">1 Month</option>
+                  <option value="2 Months">2 Months</option>
+                  <option value="Currently Unemployed / Immediate Joiner">Currently Unemployed / Immediate Joiner</option>
                 </select>
               </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Health Conditions</label>
-              <input
-                type="text"
-                placeholder="e.g. Post-stroke paralysis, bed sore stage 2"
-                value={patientConditions}
-                onChange={(e) => {
-                  setPatientConditions(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Mobility Requirements</label>
-              <select
-                value={patientMobility}
-                onChange={(e) => {
-                  setPatientMobility(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
-              >
-                <option value="Fully Independent">Fully Independent</option>
-                <option value="Needs Partial Assistance (Walker / Cane)">Needs Partial Assistance (Walker / Cane)</option>
-                <option value="Wheelchair Bound">Wheelchair Bound</option>
-                <option value="Bedridden (Requires Complete Assistance)">Bedridden (Requires Complete Assistance)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Duration & Schedule */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Engagement Type</label>
-              <select
-                value={engagementType}
-                onChange={(e) => {
-                  setEngagementType(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
-              >
-                <option value="One-time Care">One-time Care</option>
-                <option value="Regular Daily Care">Regular Daily Care</option>
-                <option value="Day Care / Day Scholar">Day Care / Day Scholar</option>
-                <option value="Residential Care">Residential Care</option>
-                <option value="Shift-based Care">Shift-based Care</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Duration Category</label>
-              <select
-                value={careDurationCategory}
-                onChange={(e) => {
-                  setCareDurationCategory(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
-              >
-                <option value="DAY_CARE">Day Care (Single day / scholar)</option>
-                <option value="SHORT_TERM">Short-term Care (&le; 30 days)</option>
-                <option value="LONG_TERM">Long-term Care (&gt; 30 days)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Care Schedule</label>
-              <select
-                value={careSchedule}
-                onChange={(e) => {
-                  setCareSchedule(e.target.value);
-                  userHasEditedRef.current = true;
-                }}
-                className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
-              >
-                <option value="12-hour care (Day shift: 8 AM - 8 PM)">12h Day Shift (8 AM - 8 PM)</option>
-                <option value="12-hour care (Night shift: 8 PM - 8 AM)">12h Night Shift (8 PM - 8 AM)</option>
-                <option value="24-hour care (Full-day live-in)">24h Live-in Attendant</option>
-                <option value="Daytime schedule">Daytime Schedule</option>
-                <option value="Night-time schedule">Night-time Schedule</option>
-                <option value="Custom shift">Custom Shift</option>
-              </select>
+        ) : enquiryCategory === 'DONOR_ENQUIRY' ? (
+          <div className="space-y-3 p-3.5 bg-emerald-950/20 border border-emerald-500/30 rounded-xl">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 border-b border-emerald-500/20 pb-1 flex items-center justify-between">
+              <span>3. Donor & Contribution Intent</span>
+              <span className="text-[10px] text-emerald-300 normal-case font-normal">Philanthropy & Foundation Support</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Cause / Fund of Interest
+                </label>
+                <select
+                  value={donorCauseInterest}
+                  onChange={(e) => {
+                    setDonorCauseInterest(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="Elderly Medical Care & Bed Fund">Elderly Medical Care & Bed Fund</option>
+                  <option value="Palliative Care & Medicine Sponsorship">Palliative Care & Medicine Sponsorship</option>
+                  <option value="Dementia Care Day Centre Support">Dementia Care Day Centre Support</option>
+                  <option value="Free Ambulance & Emergency Transport Fund">Free Ambulance & Emergency Transport Fund</option>
+                  <option value="General Foundation Endowment">General Foundation Endowment</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Donation Frequency
+                </label>
+                <select
+                  value={donationFrequency}
+                  onChange={(e) => {
+                    setDonationFrequency(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="ONE_TIME">One-time Contribution</option>
+                  <option value="MONTHLY_RECURRING">Monthly Recurring Support</option>
+                  <option value="ANNUAL_CORPUS">Annual Corpus / Memorial Giving</option>
+                  <option value="CSR_CORPORATE">Corporate CSR Partnership</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
+        ) : enquiryCategory === 'VOLUNTEER_ENQUIRY' ? (
+          <div className="space-y-3 p-3.5 bg-purple-950/20 border border-purple-500/30 rounded-xl">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-purple-400 border-b border-purple-500/20 pb-1 flex items-center justify-between">
+              <span>3. Volunteer Opportunities & Availability</span>
+              <span className="text-[10px] text-purple-300 normal-case font-normal">Community Participation</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Areas of Volunteer Interest
+                </label>
+                <select
+                  value={volunteerAreas}
+                  onChange={(e) => {
+                    setVolunteerAreas(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="Companion Care & Recreation">Elderly Companion Care & Recreational Activities</option>
+                  <option value="Reading & Storytelling Sessions">Reading & Storytelling Sessions</option>
+                  <option value="Event Coordination & Outings">Event Coordination & Outings</option>
+                  <option value="Digital Literacy for Seniors">Digital Literacy & Smartphone Assistance</option>
+                  <option value="Admin & Campus Assistance">Admin, Garden & Campus Assistance</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-300 block mb-1">
+                  Available Time Commitment
+                </label>
+                <select
+                  value={engagementType}
+                  onChange={(e) => {
+                    setEngagementType(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="Weekends (2-4 hours)">Weekends (2-4 hours)</option>
+                  <option value="Weekday Mornings">Weekday Mornings</option>
+                  <option value="Weekly 1 Full Day">Weekly 1 Full Day</option>
+                  <option value="Flexible / As Needed for Events">Flexible / As Needed for Events</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Default: SERVICE_ENQUIRY (Elderly & Healthcare Patient Profile) */
+          <div className="space-y-3">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[#1b2631] pb-1">
+              3. Patient / Client Details & Clinical Weight
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="md:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Meenakshi Ammal"
+                  value={patientName}
+                  onChange={(e) => {
+                    setPatientName(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Age</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 74"
+                  value={patientAge}
+                  onChange={(e) => {
+                    setPatientAge(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-orange-500"
+                />
+              </div>
+
+              {/* Patient Weight with kg / lb unit selector (Requirement C.1-5) */}
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1 flex items-center justify-between">
+                  <span>Weight</span>
+                  <span className="text-[9px] text-slate-500">Unit: {patientWeightUnit}</span>
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="700"
+                    placeholder="e.g. 68.5"
+                    value={patientWeight}
+                    onChange={(e) => {
+                      setPatientWeight(e.target.value);
+                      userHasEditedRef.current = true;
+                    }}
+                    className="flex-1 min-w-0 bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-orange-500"
+                  />
+                  <select
+                    value={patientWeightUnit}
+                    onChange={(e) => {
+                      setPatientWeightUnit(e.target.value as 'kg' | 'lb');
+                      userHasEditedRef.current = true;
+                    }}
+                    className="w-16 bg-[#121b24] border border-[#233342] rounded-lg px-1.5 py-1.5 text-xs text-slate-200 font-bold outline-none focus:border-orange-500 shrink-0"
+                  >
+                    <option value="kg">kg</option>
+                    <option value="lb">lb</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Health Conditions</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Post-stroke paralysis, bed sore stage 2"
+                  value={patientConditions}
+                  onChange={(e) => {
+                    setPatientConditions(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Mobility Requirements</label>
+                <select
+                  value={patientMobility}
+                  onChange={(e) => {
+                    setPatientMobility(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-3 py-1.5 text-xs text-white"
+                >
+                  <option value="Fully Independent">Fully Independent</option>
+                  <option value="Needs Partial Assistance (Walker / Cane)">Needs Partial Assistance (Walker / Cane)</option>
+                  <option value="Wheelchair Bound">Wheelchair Bound</option>
+                  <option value="Bedridden (Requires Complete Assistance)">Bedridden (Requires Complete Assistance)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Duration & Schedule */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Engagement Type</label>
+                <select
+                  value={engagementType}
+                  onChange={(e) => {
+                    setEngagementType(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="One-time Care">One-time Care</option>
+                  <option value="Regular Daily Care">Regular Daily Care</option>
+                  <option value="Day Care / Day Scholar">Day Care / Day Scholar</option>
+                  <option value="Residential Care">Residential Care</option>
+                  <option value="Shift-based Care">Shift-based Care</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Duration Category</label>
+                <select
+                  value={careDurationCategory}
+                  onChange={(e) => {
+                    setCareDurationCategory(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="DAY_CARE">Day Care (Single day / scholar)</option>
+                  <option value="SHORT_TERM">Short-term Care (&le; 30 days)</option>
+                  <option value="LONG_TERM">Long-term Care (&gt; 30 days)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Care Schedule</label>
+                <select
+                  value={careSchedule}
+                  onChange={(e) => {
+                    setCareSchedule(e.target.value);
+                    userHasEditedRef.current = true;
+                  }}
+                  className="w-full bg-[#121b24] border border-[#233342] rounded-lg px-2.5 py-1.5 text-xs text-white"
+                >
+                  <option value="12-hour care (Day shift: 8 AM - 8 PM)">12h Day Shift (8 AM - 8 PM)</option>
+                  <option value="12-hour care (Night shift: 8 PM - 8 AM)">12h Night Shift (8 PM - 8 AM)</option>
+                  <option value="24-hour care (Full-day live-in)">24h Live-in Attendant</option>
+                  <option value="Daytime schedule">Daytime Schedule</option>
+                  <option value="Night-time schedule">Night-time Schedule</option>
+                  <option value="Custom shift">Custom Shift</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 4. STRUCTURED ADDRESS & REAL-TIME PINCODE LOOKUP (Section D) */}
         <div className="space-y-3">

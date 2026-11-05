@@ -180,6 +180,7 @@ export const LiveCallPanel = () => {
     }
   }, [webrtcConnected, activeCall?.status, activeCall?.callSid, activeCall?.roomName]);
 
+  // When GlobalActiveCallWorkspace is active or on call-center page, don't show the duplicate floating bar
   if (!activeCall || pathname?.includes('/call-center')) return null;
 
   const serverUrl = activeCall.serverUrl || activeCall.wsUrl || process.env.NEXT_PUBLIC_LIVEKIT_URL || 'wss://23jy3gv6xcs.livekit.cloud';

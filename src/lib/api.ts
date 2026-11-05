@@ -15,11 +15,16 @@ export const getApiBaseUrl = (): string => {
 export const sanitizeRecordingUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   const baseUrl = getApiBaseUrl();
-  if (url.includes('localhost:4000') || url.includes('127.0.0.1:4000')) {
-    return url.replace(/http:\/\/(localhost|127\.0\.0\.1):4000/g, baseUrl);
+  // If URL points to localhost/127.0.0.1 on port 4000 or 5000, redirect to current baseUrl
+  if (/http:\/\/(localhost|127\.0\.0\.1):(4000|5000)/.test(url)) {
+    return url.replace(/http:\/\/(localhost|127\.0\.0\.1):(4000|5000)/g, baseUrl);
   }
   if (url.startsWith('/')) {
     return `${baseUrl}${url}`;
+  }
+  // If page is loaded over HTTPS, upgrade any http:// recording url to avoid Mixed Content error
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
   }
   return url;
 };

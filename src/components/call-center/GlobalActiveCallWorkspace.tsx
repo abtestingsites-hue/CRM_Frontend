@@ -39,13 +39,22 @@ export function GlobalActiveCallWorkspace() {
 
   const callStatus = activeCall?.status;
   // Determine if active call or post-disconnect documentation workspace should be presented
-  const isCallConnected = Boolean(activeCall && (callStatus === 'CONNECTED' || callStatus === 'IN_PROGRESS' || activeCall.accepted));
+  // Active during dialing, ringing, connecting, connected, or in-progress
+  const isCallConnected = Boolean(
+    activeCall &&
+    (callStatus === 'CONNECTED' ||
+      callStatus === 'IN_PROGRESS' ||
+      callStatus === 'CONNECTING' ||
+      callStatus === 'RINGING' ||
+      callStatus === 'DIALING' ||
+      activeCall.accepted)
+  );
   const isPostCallDocumentation = Boolean(persistedCallSession && !activeCall);
   const shouldRenderWorkspace = isCallConnected || isPostCallDocumentation;
 
   // Persist session across disconnection so intake remains open until saved
   useEffect(() => {
-    if (activeCall && (activeCall.status === 'CONNECTED' || activeCall.accepted)) {
+    if (activeCall && (activeCall.status === 'CONNECTED' || activeCall.status === 'CONNECTING' || activeCall.status === 'IN_PROGRESS' || activeCall.accepted)) {
       setPersistedCallSession({
         callSid: activeCall.callSid || activeCall.roomName || 'active_session',
         customerName: activeCall.customerName,
