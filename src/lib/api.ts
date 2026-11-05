@@ -5,11 +5,11 @@ export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host !== 'localhost' && host !== '127.0.0.1') {
-      return 'https://crm-uec-backend.onrender.com';
+      return 'https://crm-backend-0py9.onrender.com';
     }
-    return `http://${host}:4000`;
+    return `http://${host}:5000`;
   }
-  return 'https://crm-uec-backend.onrender.com';
+  return 'https://crm-backend-0py9.onrender.com';
 };
 
 export const sanitizeRecordingUrl = (url: string | null | undefined): string | null => {

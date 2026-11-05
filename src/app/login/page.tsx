@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -22,7 +22,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { setUser } = useAuthStore();
-
   const {
     register,
     handleSubmit,

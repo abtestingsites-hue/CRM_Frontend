@@ -34,7 +34,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
       } catch (e) { console.warn('[UI Exception Swallowed Fixed]:', e); }
     }
 
-    if (!token && pathname !== "/login") {
+    if (!token && pathname !== "/login" && pathname !== "/sso") {
       router.push("/login");
     } else if (token && pathname === "/login") {
       let role = 'ADMIN';
