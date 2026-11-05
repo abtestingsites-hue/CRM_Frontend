@@ -66,7 +66,14 @@ export default function AgentConversionBoard() {
     if (org.includes('ACARE') || org.includes('A_CARE')) {
       return (
         <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-bold text-[10px] border border-rose-500/30">
-          ACare
+          ACARE
+        </span>
+      );
+    }
+    if (org.includes('HOME_CARE') || org.includes('HOME CARE') || org.includes('IN_HOME')) {
+      return (
+        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold text-[10px] border border-amber-500/30">
+          HOME_CARE
         </span>
       );
     }

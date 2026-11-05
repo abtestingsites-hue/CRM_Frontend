@@ -10,9 +10,10 @@ export interface BusinessUnit {
 }
 
 const DEFAULT_UNITS: BusinessUnit[] = [
-  { id: '7dd16366-3230-4adb-8390-a6ca7d6db465', code: 'UEC', name: 'Universal Enterprise Care (UEC)' },
-  { id: 'eaa21ef8-d179-4ae5-b571-0711dde739a4', code: 'UNCF', name: 'United Nursing & Care Foundation (UNCF)' },
-  { id: 'b72e1850-932d-4ef1-8a90-349092892911', code: 'ACARE', name: 'ACare (Ambulance & Care)' },
+  { id: '8497e089-ecd8-4b94-8f76-4ce8cd386a1e', code: 'UEC', name: 'Universal Elder Care (UEC)' },
+  { id: '51268bf0-dca0-4937-9016-612d685d950e', code: 'UNCF', name: 'Universal Nature Care & Cure Foundation (UNCF)' },
+  { id: '531a0fd6-dd1b-46b9-974c-93ab21ca63dd', code: 'ACARE', name: 'Ambulance & Care (ACARE)' },
+  { id: 'a8ad5f04-2777-42e8-a6c5-af4ce9e72ae4', code: 'HOME_CARE', name: 'Home Care Services (HOME_CARE)' },
 ];
 
 interface UnitState {

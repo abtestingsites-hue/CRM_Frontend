@@ -161,24 +161,28 @@ export default function AgentLeadsPage() {
     const org = (orgName || 'UEC').toUpperCase();
     if (org.includes('UNCF')) {
       return (
-        <span className="px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 font-bold text-[11px] border border-indigo-500/30 flex items-center gap-1">
-          <Building2 className="w-3 h-3 text-indigo-400" />
-          <span>UNCF</span>
+        <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-bold text-[10px] border border-indigo-500/30">
+          UNCF
         </span>
       );
     }
     if (org.includes('ACARE') || org.includes('A_CARE')) {
       return (
-        <span className="px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400 font-bold text-[11px] border border-rose-500/30 flex items-center gap-1">
-          <Building2 className="w-3 h-3 text-rose-400" />
-          <span>ACare</span>
+        <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-bold text-[10px] border border-rose-500/30">
+          ACARE
+        </span>
+      );
+    }
+    if (org.includes('HOME_CARE') || org.includes('HOME CARE') || org.includes('IN_HOME')) {
+      return (
+        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold text-[10px] border border-amber-500/30">
+          HOME_CARE
         </span>
       );
     }
     return (
-      <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 font-bold text-[11px] border border-emerald-500/30 flex items-center gap-1">
-        <Building2 className="w-3 h-3 text-emerald-400" />
-        <span>UEC</span>
+      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold text-[10px] border border-emerald-500/30">
+        UEC
       </span>
     );
   };
