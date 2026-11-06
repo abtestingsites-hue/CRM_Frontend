@@ -656,10 +656,26 @@ export function CallIntakeFormModal({
         console.warn('LocalStorage draft save error:', err);
       }
 
-      // 2. Save to backend if callSid is available
+      // 2. Save to backend (calls draft if callSid exists, or lead draft if leadId exists)
       if (callSid) {
         try {
           const res = await apiFetch(`/api/v1/enquiry/calls/${callSid}/draft`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ draftData: draftPayload }),
+          });
+          if (res.ok) {
+            setDraftStatus('SAVED');
+            setLastSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          } else {
+            setDraftStatus('FAILED');
+          }
+        } catch (e) {
+          setDraftStatus('FAILED');
+        }
+      } else if (leadId) {
+        try {
+          const res = await apiFetch(`/api/v1/enquiry/leads/${leadId}/draft`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ draftData: draftPayload }),
@@ -872,29 +888,36 @@ export function CallIntakeFormModal({
 
         <div className="flex items-center gap-3">
           {/* Draft Persistence Status */}
-          <div className="text-[11px] font-medium flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800">
-            {draftStatus === 'SAVING' && (
-              <span className="text-amber-400 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3 animate-spin" /> Saving draft...
+          <div className="text-[11px] font-medium flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800">
+              {draftStatus === 'SAVING' && (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <RefreshCw className="w-3 h-3 animate-spin" /> Saving draft...
+                </span>
+              )}
+              {draftStatus === 'SAVED' && (
+                <span className="text-emerald-400 flex items-center gap-1" title={lastSavedAt ? `Saved at ${lastSavedAt}` : 'Draft saved'}>
+                  <Check className="w-3 h-3" /> Draft saved {lastSavedAt && `(${lastSavedAt})`}
+                </span>
+              )}
+              {draftStatus === 'FAILED' && (
+                <span className="text-rose-400 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Autosave failed (local cached)
+                </span>
+              )}
+              {draftStatus === 'UNSAVED' && (
+                <span className="text-slate-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Unsaved changes
+                </span>
+              )}
+              {draftStatus === 'IDLE' && (
+                <span className="text-slate-500">Draft ready</span>
+              )}
+            </div>
+            {customerDisposition === 'CONVERTED' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/80">
+                <Check className="w-3 h-3" /> ERP Sync Ready
               </span>
-            )}
-            {draftStatus === 'SAVED' && (
-              <span className="text-emerald-400 flex items-center gap-1" title={lastSavedAt ? `Saved at ${lastSavedAt}` : 'Draft saved'}>
-                <Check className="w-3 h-3" /> Draft saved {lastSavedAt && `(${lastSavedAt})`}
-              </span>
-            )}
-            {draftStatus === 'FAILED' && (
-              <span className="text-rose-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> Autosave failed (local cached)
-              </span>
-            )}
-            {draftStatus === 'UNSAVED' && (
-              <span className="text-slate-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Unsaved changes
-              </span>
-            )}
-            {draftStatus === 'IDLE' && (
-              <span className="text-slate-500">Draft ready</span>
             )}
           </div>
 
