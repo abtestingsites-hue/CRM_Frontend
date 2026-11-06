@@ -267,7 +267,7 @@ export default function LeadPoolPage() {
 
       // Organization Filter
       if (orgFilter !== 'ALL') {
-        const leadOrg = (l.foundation || l.unitName || '').toUpperCase();
+        const leadOrg = (l.foundation || l.unit?.code || l.unit?.name || l.unitName || '').toUpperCase();
         if (!leadOrg.includes(orgFilter.toUpperCase())) return false;
       }
 
@@ -574,7 +574,7 @@ export default function LeadPoolPage() {
 
                       {/* 2. Organization */}
                       <td className="px-3.5 py-3.5">
-                        {getOrganizationBadge(lead.foundation || lead.unitName)}
+                        {getOrganizationBadge(lead.foundation || lead.unit?.code || lead.unit?.name || lead.unitName)}
                       </td>
 
                       {/* 3. Enquiry Category */}
@@ -840,7 +840,7 @@ export default function LeadPoolPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-sm text-white">{lead.customerName}</h3>
-                        {getOrganizationBadge(lead.foundation || lead.unitName)}
+                        {getOrganizationBadge(lead.foundation || lead.unit?.code || lead.unit?.name || lead.unitName)}
                       </div>
                       <p className="font-mono text-xs text-slate-400 mt-0.5">{lead.phoneNumber}</p>
                       {lead.patientName && (
